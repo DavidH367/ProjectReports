@@ -37,18 +37,16 @@ const MainComponent = () => {
   const [doci, setDoci] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dateup, setDateup] = React.useState(parseDate("2024-04-04"));
+  const [dateup, setDateup] = useState(null);
   const [reached, setReached] = useState("");
   const [zone, setZone] = useState("");
   const [archivo1, setArchivo1] = useState(null);
   const [archivo2, setArchivo2] = useState(null);
   const [archivo3, setArchivo3] = useState(null);
-
-
+  const [selectKey, setSelectKey] = useState(0);
 
   //estado para validar solo un guardado
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
-
 
   //inicio para el filtro de datos
   const [data, setData] = useState([]);
@@ -124,7 +122,7 @@ const MainComponent = () => {
       }
     };
     fetchSuppliers();
-  }, []);
+  }, [supliersInfoRef]);
 
   function handleSupplierChange(event) {
     const selectedSupplierValue = event.target.value;
@@ -133,8 +131,11 @@ const MainComponent = () => {
     console.log("Selecciona: ", selectedSupplierValue);
   }
 
-
-
+  // Función para convertir CalendarDate a Date
+  const calendarDateToUTC = (calendarDate) => {
+    const date = new Date(Date.UTC(calendarDate.year, calendarDate.month - 1, calendarDate.day));
+    return date;
+  };
 
   //Funcion para guardar datos
   const handleSubmit = async (event) => {
@@ -222,7 +223,7 @@ const MainComponent = () => {
           id: docId2,
           new_title: title,
           description: description,
-          date: new Date(dateup), // Guardar la fecha actual en Firebase
+          date: calendarDateToUTC(dateup), // Guardar la fecha actual en Firebase
           reached: parseFloat(reached),
           zone: zone,
           images:{
@@ -242,16 +243,17 @@ const MainComponent = () => {
         await addDoc(upReference, newUpData);
 
         // Limpiar los campos del formulario después de guardar
+        setSelectedSupplier(null);
+        setSelectKey(prevKey => prevKey + 1);
         setTitle("");
         setDescription("");
-        setDateup("");
+        setDateup(null);
         setReached("");
         setZone("");
         setArchivo1(null);
         setArchivo2(null);
         setArchivo3(null);
 
-        window.location.reload();
       } catch (error) {
         console.error("Error al guardar los datos:", error);
       } finally {
@@ -292,6 +294,7 @@ const MainComponent = () => {
                 </label>
                 <div className="mt-2 pr-4">
                   <Select
+                    key={selectKey} // Clave para forzar re-renderizado
                     items={suppliers}
                     label="Actualizar a:"
                     placeholder="Selecciona un Proyecto"
@@ -322,12 +325,13 @@ const MainComponent = () => {
                 <div className="mt-2 pr-4">
                   <Input
                     isRequired
+                    label="Titulo:"
                     type="text"
                     placeholder="Ej. Entrega de Filtros"
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="max-w-xs"
+                    className="max-w-md"
                   />
                 </div>
               </div>
@@ -461,9 +465,15 @@ const MainComponent = () => {
                 onSubmit={handleSubmit}
                 type="submit"
                 className="h-9 w-40 mt-11 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                disabled={guardando} // Deshabilitar el botón cuando guardando es true
               >
-                Guardar
+                {guardando ? "Guardando..." : "Guardar"}
               </button>
+              {!formValid && (
+                <p className="text-red-500 mt-2">
+                  {errorMessage}
+                </p>
+              )}
             </div>
           </form>
         </div>

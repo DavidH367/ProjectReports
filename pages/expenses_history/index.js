@@ -221,12 +221,12 @@ const InformeGastos = () => {
         </Head>
         <div className="container mx-auto p-10 justify-center items-center h-full">
           <h2 className="text-lg font-semibold mb-2 ">
-            <p className="text-center">CORREGIR INFORMACION DE PROYECTO PROYECTO</p>
+            <p className="text-center">CORREGIR INFORMACION DE MINISTERIOS</p>
 
           </h2>
           <div className="flex flex-wrap gap-3">
             {sizes.map((size) => (
-              <Button key={size} onPress={() => handleOpen(size)}>Modificar Proyecto</Button>
+              <Button key={size} onPress={() => handleOpen(size)}>Modificar Ministerio</Button>
             ))}
           </div>
           <Modal
@@ -241,7 +241,13 @@ const InformeGastos = () => {
                   <ModalBody>
                     <form onSubmit={handleSubmit}>
                       <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
+                        
                         <div className="mt-2 pr-4">
+                        <label
+                            className=" block text-sm font-medium leading-6 text-gray-900"
+                          >
+                            <p className="font-bold text-lg ">MINISTERIO</p>
+                          </label>
                           <Select
                             items={suppliers}
                             label="Actualizar a:"
@@ -331,7 +337,7 @@ const InformeGastos = () => {
                           >
                             <a className="font-bold text-lg">MISION</a>
                           </label>
-                          <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
+                          <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                             <Textarea
                               isRequired
                               id="mision"
@@ -353,7 +359,7 @@ const InformeGastos = () => {
                           >
                             <a className="font-bold text-lg">VISION</a>
                           </label>
-                          <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
+                          <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                             <Textarea
                               isRequired
                               id="vision"

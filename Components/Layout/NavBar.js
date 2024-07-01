@@ -60,12 +60,11 @@ export default function App() {
 
   const menuItems = [
     { text: "Inicio", url: "../" },
-    { text: "PROYECTOS", url: "/purchasing" },
-    { text: "ACTUALIZACION DE PROYECTO", url: "/sales" },
-    { text: "Proveedores", url: "/supliers" },
-    { text: "Gastos", url: "/expenses" },
-    { text: "Consultas", url: "/searches" },
-    { text: "Usuarios", url: "/users" },
+    { text: "ESCUELA NLP", url: "/reportes" },
+    { text: "MINISTERIOS", url: "/purchasing" },
+    { text: "ACTUALIZACION DE MINISTERIOS", url: "/sales" },
+    { text: "REGISTRO DE EVENTOS", url: "/supliers" },
+    { text: "USUARIOS", url: "/users" },
   ];
 
   return (
@@ -79,7 +78,7 @@ export default function App() {
           
           <Link color="foreground" href="../">
             <Logo/>
-            {/* <p className="font-bold text-inherit">BODEGA - GAD</p> */}
+            
           </Link>
         </NavbarBrand>
 
@@ -89,20 +88,27 @@ export default function App() {
         <NavbarBrand>
           <Link color="foreground" href="../">
             <Logo/>
-            {/* <p className="font-bold text-large text-inherit">BODEGA - GAD</p> */}
+            
           </Link>
         </NavbarBrand>
         <NavbarItem >
+          <Link href="/reportes" color="foreground" aria-current="page">
+          <p className="text-large">
+            ESCUELA NLP
+          </p>
+          </Link>
+        </NavbarItem>
+        <NavbarItem >
           <Link href="/purchasing" color="foreground" aria-current="page">
           <p className="text-large">
-            PROYECTOS
+            MINISTERIOS
           </p>
           </Link>
         </NavbarItem>
         <NavbarItem>
           <Link color="foreground" href="/sales">
             <p className="text-large">
-              ACTUALIZAR PROYECTOS
+              ACTUALIZAR MINISTERIOS
             </p>
           </Link>
         </NavbarItem>

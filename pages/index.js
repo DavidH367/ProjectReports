@@ -67,7 +67,7 @@ export default function Home() {
         <div className="flex justify-center items-center">
         <Image
             isBlurred
-            height={400}
+            height="auto"
             width={440}
             src="/img/LOGO_letras_deg.png"
             alt="LogoImages"

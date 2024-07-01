@@ -35,10 +35,10 @@ const Purchasing1 = () => {
                 onPress={() => console.log("item pressed")}
               >
                 <CardHeader className="pb-0 pt-1 px-4 flex-col text-center">
-                  <h4 className="font-bold text-large">NUEVO PROYECTO</h4>
+                  <h4 className="font-bold text-large">NUEVO MINISTERIO</h4>
                   <Divider />
                   <small className="text-default-500 font-bold">
-                    Nueva Informacion para Proyectos.
+                    Nueva Informacion para Ministerios.
                   </small>
                 </CardHeader>
                 <CardBody className="overflow-visible py-2">
@@ -60,7 +60,7 @@ const Purchasing1 = () => {
                 onPress={() => console.log("item pressed")}
               >
                 <CardHeader className="pb-0 pt-1 px-4 flex-col text-center">
-                  <h4 className="font-bold text-large">INFORMACION DE PROYECTOS</h4>
+                  <h4 className="font-bold text-large">INFORMACION DE MINISTERIOS</h4>
                   <Divider />
                   <small className="text-default-500 font-bold">
                     Proyectos Actuales.

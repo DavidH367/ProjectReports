@@ -36,6 +36,7 @@ const UserRegister = () => {
 
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [selectKey, setSelectKey] = useState(0);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -105,7 +106,7 @@ const UserRegister = () => {
       }
     };
     fetchSuppliers();
-  }, []);
+  }, [supliersInfoRef]);
 
   useEffect(() => {
     if (!user) {
@@ -113,7 +114,7 @@ const UserRegister = () => {
       router.push("/auth/Login");
     }
   }, []);
-  
+
   const handleLogout = async () => {
     localStorage.removeItem("user");
     const logoutUser = await logout();
@@ -168,8 +169,13 @@ const UserRegister = () => {
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
 
-
-        window.location.reload();
+        setSelectedSupplier(null);
+        setSelectKey(prevKey => prevKey + 1);
+        setFormData({
+          firstName: "",
+          lastName: "",
+          role: "",
+        });
       } catch (error) {
         console.error("Error al guardar los datos:", error);
       } finally {
@@ -260,7 +266,7 @@ const UserRegister = () => {
 
           <div className="flex flex-wrap gap-2">
             {sizes.map((size) => (
-              <Button key={size} onPress={() => handleOpen(size)}>Modificar Usuario{console.log("usuario:",user.role,)}</Button>
+              <Button key={size} onPress={() => handleOpen(size)}>Modificar Usuario</Button>
             ))}
           </div>
           <Modal
@@ -276,26 +282,36 @@ const UserRegister = () => {
                   <ModalBody>
                     <form onSubmit={handleSubmit2}>
                       <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-2">
-                        <div className="mt-2 pr-4">
-                          <Select
-                            items={suppliers}
-                            label="Actualizar a:"
-                            placeholder="Selecciona un Usuario"
-                            className="max-w-xs"
-                            value={selectedSupplier}
 
-                            onChange={handleSupplierChange}
+                        <div className="sm:col-span-1">
+                        <label
+                            className=" block text-sm font-medium leading-6 text-gray-900"
                           >
-                            {suppliers.map((supplier) => (
-                              <SelectItem key={supplier.id} textValue={supplier.name}>
-                                <div className="flex gap-2 items-center">
-                                  <div className="flex flex-col">
-                                    <span className="text-small">{supplier.name}</span>
+                            <p className="font-bold text-lg ">USUARIO</p>
+                          </label>
+                          
+                          <div className="mt-2 pr-4">
+                            <Select
+                              key={selectKey} // Clave para forzar re-renderizado
+                              items={suppliers}
+                              label="Actualizar a:"
+                              placeholder="Selecciona un Usuario"
+                              className="max-w-xs"
+                              value={selectedSupplier}
+
+                              onChange={handleSupplierChange}
+                            >
+                              {suppliers.map((supplier) => (
+                                <SelectItem key={supplier.id} textValue={supplier.name}>
+                                  <div className="flex gap-2 items-center">
+                                    <div className="flex flex-col">
+                                      <span className="text-small">{supplier.name}</span>
+                                    </div>
                                   </div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </Select>
+                                </SelectItem>
+                              ))}
+                            </Select>
+                          </div>
                         </div>
 
                         <div className="sm:col-span-1">
@@ -362,9 +378,18 @@ const UserRegister = () => {
                     <Button color="danger" variant="light" onPress={onClose}>
                       Cerrar
                     </Button>
-                    <Button color="primary" onPress={handleSubmit2}>
-                      Guardar
+                    <Button
+                      disabled={guardando} // Deshabilitar el botón cuando guardando es true
+                      color="primary"
+                      onPress={handleSubmit2}
+                    >
+                      {guardando ? "Guardando..." : "Guardar"}
                     </Button>
+                    {!formValid && (
+                      <p className="text-red-500 mt-2">
+                        {errorMessage}
+                      </p>
+                    )}
                   </ModalFooter>
                 </>
               )}

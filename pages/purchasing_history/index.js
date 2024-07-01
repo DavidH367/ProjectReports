@@ -1,30 +1,14 @@
 import Head from "next/head";
 
-import ReusableTable from "../../Components/Form/ReusableTable";
-import FilterSection from "../../Components/Form/FilterSectionP";
 import React, { useState, useEffect } from "react";
-import { parse, isAfter, isBefore } from "date-fns";
-import { startOfDay, endOfDay } from "date-fns";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../lib/context/AuthContext";
-import Estados from "@/Components/Form/statsC";
-import { CalendarDate, parseDate } from "@internationalized/date";
 import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
-import { DateValue, now } from "@internationalized/date";
-import { useFirebaseUpload } from 'react-firebase-hooks/storage';
-
-
-import FirebaseFirestore from 'firebase/app';
 import "firebase/firestore";
 import { db } from "../../lib/firebase";
 import {
   addDoc,
   collection,
-  query,
-  getDocs,
-  orderBy,
-  limit,
-  
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
@@ -47,8 +31,16 @@ const ConsultasClientes = () => {
   const [ministry_name, setMinistry_name] = useState("");
   const [mision, setMision] = useState("");
   const [vision, setVision] = useState("");
-  const [start_year, setStart_year] = React.useState(parseDate("2024-04-04"));
+  const [start_year, setStart_year] = useState(null);
   const [archivo, setArchivo] = useState(null);
+  const [selectKey, setSelectKey] = useState(0);
+  
+  const categories = [
+    { key: "Education", label: "Education" },
+    { key: "Health", label: "Health" },
+    { key: "XMA", label: "XMA" },
+    { key: "Churchs", label: "Churchs" }
+  ];
 
 
   //estado para formulario
@@ -68,11 +60,17 @@ const ConsultasClientes = () => {
     }
   }, []);
 
-  
+
   const handleChange = (event) => {
     const archivo = event.target.files[0];
     console.log("Archivo seleccionado:", archivo);
     setArchivo(archivo);
+  };
+
+  // Función para convertir CalendarDate a Date
+  const calendarDateToUTC = (calendarDate) => {
+    const date = new Date(Date.UTC(calendarDate.year, calendarDate.month - 1, calendarDate.day));
+    return date;
   };
 
   // Función para guardar datos
@@ -95,12 +93,11 @@ const ConsultasClientes = () => {
       ) {
         setFormValid(false);
         setErrorMessage("Por favor, complete todos los campos obligatorios.");
+        setGuardando(false);
         return; // No enviar el formulario si falta algún campo obligatorio
       }
       try {
 
-
-        
         let logoUrl = "";
         if (archivo) {
           const archivoRef = ref(storage, `imagenes/imagenes/logos/${archivo.name}`);
@@ -129,7 +126,7 @@ const ConsultasClientes = () => {
           ministry_name: ministry_name,
           mision: mision,
           vision: vision,
-          date: new Date(start_year),
+          date: calendarDateToUTC(start_year),
           leader: leader,
           budget: parseFloat(budget),
           logo_url: logoUrl,
@@ -141,21 +138,24 @@ const ConsultasClientes = () => {
           uid: user.uid,
         };
 
-
         await addDoc(nlpReference, newData);
         await addDoc(upReference, newUpData);
 
         // Limpiar los campos del formulario después de guardar
-        setCategory("");
         setDescription("");
         setMinistry_name("");
         setMision("");
         setVision("");
-        setStart_year("");
+        setLeader("");
+        setBudget("");
+        setCategory("");
+        setSelectKey(prevKey => prevKey + 1);
         setArchivo(null);
+        setStart_year(null);
 
+        // Resetear el input de archivo
+        document.getElementById("logo").value = "";
 
-        window.location.reload();
       } catch (error) {
         console.error("Error al guardar los datos:", error);
       } finally {
@@ -171,7 +171,7 @@ const ConsultasClientes = () => {
   return (
     <div className="espacio">
       <Head>
-        <title>NUEVO PROYECTO</title>
+        <title>NUEVO MINISTERIO</title>
         <meta name="description" content="INGRESO DE ALUMNOS" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/img/logo_paginas.png" />
@@ -179,7 +179,7 @@ const ConsultasClientes = () => {
       <div className="container mx-auto p-10 justify-center items-center">
         <div className="px-8 bg-white shadow rounded-lg shadow-lg  p-4 box-border h-400 w-800 p-2 border-4 ">
           <h2 className="text-lg font-semibold mb-2 ">
-            <p className="text-center">DATOS GENERALES DEL PROYECTO</p>
+            <p className="text-center">DATOS GENERALES DEL MINISTERIO</p>
           </h2>
           <p className="text-sm text-gray-600 mb-6">
             POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
@@ -193,15 +193,24 @@ const ConsultasClientes = () => {
                   <p className="font-bold text-lg ">CATEGORIA</p>
                 </label>
                 <div className="mt-2 pr-4">
-                  <Input
+                  <Select
+                    key={selectKey} // Clave para forzar re-renderizado
+                    label="Select a category"
+                    className="max-w-xs"
                     isRequired
-                    type="text"
-                    label="Tipo"
                     id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="max-w-xs"
-                  />
+                  >
+                    <SelectItem key="" value="">
+                      Select a category
+                    </SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.key} value={cat.key}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </Select>
                 </div>
               </div>
 
@@ -218,7 +227,6 @@ const ConsultasClientes = () => {
                     type="text"
                     label="Descript."
                     id="description"
-                    autoComplete="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="max-w-xs"
@@ -255,7 +263,7 @@ const ConsultasClientes = () => {
                 >
                   <a className="font-bold text-lg">MISION</a>
                 </label>
-                <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
+                <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                   <Textarea
                     isRequired
                     id="mision"
@@ -272,12 +280,12 @@ const ConsultasClientes = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Vision"
                   className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="Vision"
                 >
                   <a className="font-bold text-lg">VISION</a>
                 </label>
-                <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
+                <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                   <Textarea
                     isRequired
                     id="vision"
@@ -293,10 +301,11 @@ const ConsultasClientes = () => {
               </div>
 
               <div className="sm:col-span-1 ">
-                <label className="block text-sm font-medium leading-6 text-gray-900">
+                <label 
+                className="block text-sm font-medium leading-6 text-gray-900">
                   <a className="font-bold text-lg">Fecha de Inicio</a>
                 </label>
-                <div className="mt-2 pr-12">
+                <div className="mt-2 pr-32">
                   <DatePicker
                     id="start_year"
                     label="Fecha de Inicio"
@@ -358,7 +367,7 @@ const ConsultasClientes = () => {
             </div>
             <Divider className="my-4" />
             <h2 className="text-lg font-semibold mb-2 ">
-              <p className="text-center">DATOS GRAFICOS DE LOS PROYECTOS</p>
+              <p className="text-center">DATOS GRAFICOS DEL MINISTERIO</p>
             </h2>
             <p className="text-sm text-gray-600 mb-6">
               POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
@@ -374,24 +383,30 @@ const ConsultasClientes = () => {
                 <div className="mt-2 pr-4">
 
 
-                <input
-                  type="file"
-                  id="logo"
-                  onChange={handleChange}
-                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                />
+                  <input
+                    type="file"
+                    id="logo"
+                    onChange={handleChange}
+                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
+                  />
 
-      
+
                 </div>
               </div>
 
               <button
-                onSubmit={handleSubmit}
                 type="submit"
+                onSubmit={handleSubmit}
                 className="h-9 w-40 mt-11 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                disabled={guardando} // Deshabilitar el botón cuando guardando es true
               >
-                Guardar
+                {guardando ? "Guardando..." : "Guardar"}
               </button>
+              {!formValid && (
+                <p className="text-red-500 mt-2">
+                  {errorMessage}
+                </p>
+              )}
             </div>
           </form>
         </div>
