@@ -49,7 +49,6 @@ const ConsultasClientes = () => {
   // Estado para manejar la validez del formulario
   const [formValid, setFormValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  //fin del filtro
   //Valida acceso a la pagina
   const router = useRouter();
   const { user, errors, setErrors } = useAuth();
@@ -381,8 +380,6 @@ const ConsultasClientes = () => {
                   <a className="font-bold text-lg">LOGO</a>
                 </label>
                 <div className="mt-2 pr-4">
-
-
                   <input
                     type="file"
                     id="logo"
