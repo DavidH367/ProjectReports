@@ -72,7 +72,7 @@ export default function Users() {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-full"
-                    src="../img/Pas.png"
+                    src="../img/pass.png"
                     width={300}
                   />
                 </CardBody>

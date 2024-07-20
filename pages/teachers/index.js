@@ -536,14 +536,14 @@ const Alumnosnlp = () => {
         <>
             <div className="espacioU">
                 <Head>
-                    <title>ALUMNOS REGISTRADOS EN PROYECTO NUEVA VIDA</title>
+                    <title>MAESTROS REGISTRADOS EN PROYECTO NUEVA VIDA</title>
                     <meta name="description" content="ACTUALIZACIONES DE ACTIVIDADES" />
                     <meta name="viewport" content="width=device-width, initial-scale=1" />
                     <link rel="icon" href="/img/logo_paginas.png" />
                 </Head>
                 <div className="container mx-auto p-1 ">
                     <h2 className="text-lg font-semibold mb-4 text-center">
-                        ALUMNOS REGISTRADOS EN PROYECTO NUEVA VIDA
+                        MAESTROS REGISTRADOS EN PROYECTO NUEVA VIDA
                     </h2>
                     <div className="">
                         <div className="">
@@ -552,14 +552,14 @@ const Alumnosnlp = () => {
                                 <Button
                                     className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white mx-2 "
                                     onPress={onAddOpen}>
-                                    Registrar Nuevo Alumno
+                                    Registrar Nuevo Maestro
                                 </Button>
 
 
                                 <Button
                                     className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white mx-2 "
                                     onPress={onModOpen}>
-                                    Actualizar Info Alumno
+                                    Actualizar Info Maestro
                                 </Button>
 
                             </div>
@@ -579,7 +579,7 @@ const Alumnosnlp = () => {
                                 <ModalContent>
                                     {() => (
                                         <>
-                                            <ModalHeader className="text-center flex flex-col gap-1">Registrar Nuevo Alumno</ModalHeader>
+                                            <ModalHeader className="text-center flex flex-col gap-1">Registrar Nuevo Maestro</ModalHeader>
                                             <ModalBody>
                                                 <div className="grid gap-1 grid-cols-1">
                                                     {errorMessage && (

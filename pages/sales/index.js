@@ -24,7 +24,7 @@ const MainComponent = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/img/logo_paginas.png" />
       </Head>
-      <h2 className="text-lg font-semibold mb-2 p-4 text-center">ACTUALIZACION DE PROYECTOS</h2>
+      <h2 className="text-lg font-semibold mb-2 p-4 text-center">ACTUALIZACIONES DE PROYECTOS</h2>
       <div className="justify-center">
         <div className=" p-4 grid gap-12 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2  justify-items-center">
           <div>
@@ -35,7 +35,7 @@ const MainComponent = () => {
                 onPress={() => console.log("item pressed")}
               >
                 <CardHeader className="pb-0 pt-1 px-4 flex-col text-center">
-                  <h4 className="font-bold text-large">ACTUALIZACION DE MINISTERIO</h4>
+                  <h4 className="font-bold text-large">NOTICIAS DE MINISTERIO</h4>
                   <Divider />
                   <small className="text-default-500 font-bold">
                     Registrar actualización
@@ -45,7 +45,7 @@ const MainComponent = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/modificar_clase.jpg"
+                    src="../img/noticias.png"
                     width={270}
                   />
                 </CardBody>
@@ -60,7 +60,7 @@ const MainComponent = () => {
                 onPress={() => console.log("item pressed")}
               >
                 <CardHeader className="pb-0 pt-1 px-4 flex-col text-center">
-                  <h4 className="font-bold text-large">HISTORIAL DE ACTUALIZACIONES</h4>
+                  <h4 className="font-bold text-large">HISTORIAL DE NOTICIAS</h4>
                   <Divider />
                   <small className="text-default-500 font-bold">
                     Consulta de actividades por Ministerio
@@ -70,7 +70,7 @@ const MainComponent = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/horario.jpg"
+                    src="../img/historialnoticias.png"
                     width={270}
                   />
                 </CardBody>

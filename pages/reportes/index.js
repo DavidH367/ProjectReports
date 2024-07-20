@@ -26,8 +26,8 @@ const Purchasing1 = () => {
       </Head>
       <h2 className="text-lg font-semibold mb-2 p-4 text-center">PROYECTO NUEVA VIDA</h2>
       <div className="justify-center">
-        <div className=" p-4 grid gap-12 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2  justify-items-center">
-          <div>
+        <div className=" p-4 grid gap-12 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2  justify-items-center justify-center">
+          <div className="">
             <Link href="../../alumnos">
               <Card
                 className="py-4"
@@ -45,7 +45,7 @@ const Purchasing1 = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/registrar_alumno.jpg"
+                    src="../img/alumnos.png"
                     width={270}
                   />
                 </CardBody>
@@ -70,7 +70,33 @@ const Purchasing1 = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/historial_alumnos.jpg"
+                    src="../img/patrocinadores.png"
+                    width={270}
+                  />
+                </CardBody>
+              </Card>
+            </Link>
+          </div>
+
+          <div>
+            <Link href="../../teachers">
+              <Card
+                className="py-4 "
+                isPressable
+                onPress={() => console.log("item pressed")}
+              >
+                <CardHeader className="pb-0 pt-1 px-4 flex-col text-center">
+                  <h4 className="font-bold text-large">MAESTROS</h4>
+                  <Divider />
+                  <small className="text-default-500 font-bold">
+                    Informacion de Maestros
+                  </small>
+                </CardHeader>
+                <CardBody className="overflow-visible py-2">
+                  <Image
+                    alt="Card background"
+                    className="object-cover rounded-xl h-45 w-360"
+                    src="../img/teachers.png"
                     width={270}
                   />
                 </CardBody>

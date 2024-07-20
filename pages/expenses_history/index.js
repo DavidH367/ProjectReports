@@ -226,7 +226,7 @@ const InformeGastos = () => {
           </h2>
           <div className="flex flex-wrap gap-3">
             {sizes.map((size) => (
-              <Button key={size} onPress={() => handleOpen(size)}>Modificar Ministerio</Button>
+              <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white" key={size} onPress={() => handleOpen(size)}>Modificar Ministerio</Button>
             ))}
           </div>
           <Modal

@@ -45,7 +45,7 @@ const Purchasing1 = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/registrar_alumno.jpg"
+                    src="../img/ministerios.png"
                     width={270}
                   />
                 </CardBody>
@@ -70,7 +70,7 @@ const Purchasing1 = () => {
                   <Image
                     alt="Card background"
                     className="object-cover rounded-xl h-40 w-360"
-                    src="../img/historial_alumnos.jpg"
+                    src="../img/infoministerio.png"
                     width={270}
                   />
                 </CardBody>

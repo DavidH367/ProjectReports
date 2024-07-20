@@ -86,42 +86,42 @@ export default function App() {
 
       <NavbarContent className="hidden flexin g" justify="center">
         <NavbarBrand>
-          <Link color="foreground" href="../">
+          <Link color="foreground" href="../" isBlock>
             <Logo/>
             
           </Link>
         </NavbarBrand>
         <NavbarItem >
-          <Link href="/reportes" color="foreground" aria-current="page">
+          <Link href="/reportes" color="foreground" aria-current="page" isBlock>
           <p className="text-large">
             ESCUELA NLP
           </p>
           </Link>
         </NavbarItem>
         <NavbarItem >
-          <Link href="/purchasing" color="foreground" aria-current="page">
+          <Link href="/purchasing" color="foreground" aria-current="page" isBlock>
           <p className="text-large">
             MINISTERIOS
           </p>
           </Link>
         </NavbarItem>
         <NavbarItem>
-          <Link color="foreground" href="/sales">
+          <Link color="foreground" href="/sales" isBlock>
             <p className="text-large">
-              ACTUALIZAR MINISTERIOS
+              NOTICIAS DE MINISTERIOS
             </p>
           </Link>
         </NavbarItem>
         <NavbarItem>
-          <Link color="foreground" href="/supliers">
+          <Link color="foreground" href="/supliers" isBlock>
             <p className="text-large">
-              REGISTRO DE EVENTOS  
+              R. EVENTOS  
             </p>
           </Link>
         </NavbarItem>
         
         <NavbarItem>
-          <Link color="foreground" href="/users">
+          <Link color="foreground" href="/users" isBlock>
             <p className="text-large">
               USUARIOS
             </p>

@@ -1,6 +1,7 @@
 
 export const columns = [
     { title: '#', field: 'indexs' },
+    { title: 'LOGO', field: 'logo_url' },
     { title: 'CATEGORIA', field: 'category' },
     { title: 'DESCRIPCION', field: 'description' },
     { title: 'NOMBRE', field: 'ministry_name' },
@@ -9,7 +10,6 @@ export const columns = [
     { title: 'MISION', field: 'mision' },
     { title: 'VISION', field: 'vision' },
     { title: 'INICIO', field: 'date' },
-    { title: 'LOGO', field: 'logo_url' },
 
 ];
 
