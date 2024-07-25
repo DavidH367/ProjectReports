@@ -10,7 +10,8 @@ import {
   orderBy,
   limit,
   updateDoc,
-  doc
+  doc,
+  onSnapshot
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
@@ -137,7 +138,7 @@ const InformeGastos = () => {
       setGuardando(true);
 
       const idDocumentos = selectedSupplier;
-      
+
       // Verificar si los campos obligatorios están llenos
       if (
         !formData.ministry_name ||
@@ -176,8 +177,6 @@ const InformeGastos = () => {
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
 
-
-        window.location.reload();
       } catch (error) {
         console.error("Error al guardar los datos:", error);
       } finally {
@@ -191,13 +190,10 @@ const InformeGastos = () => {
   };
 
 
-  //traer datos de FireStore
   useEffect(() => {
-    const fetchExpenses = async () => {
-      const q = query(collection(db, "ministries"));
+    const q = query(collection(db, "ministries"));
 
-      const querySnapshot = await getDocs(q);
-
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const expensesData = [];
       let indexs = 1;
       querySnapshot.forEach((doc) => {
@@ -206,8 +202,10 @@ const InformeGastos = () => {
       setData(expensesData);
       setFilteredData(expensesData);
       console.log(expensesData); // Inicializa los datos filtrados con los datos originales
-    };
-    fetchExpenses();
+    });
+
+    // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -241,9 +239,9 @@ const InformeGastos = () => {
                   <ModalBody>
                     <form onSubmit={handleSubmit}>
                       <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
-                        
+
                         <div className="mt-2 pr-4">
-                        <label
+                          <label
                             className=" block text-sm font-medium leading-6 text-gray-900"
                           >
                             <p className="font-bold text-lg ">MINISTERIO</p>
@@ -254,7 +252,7 @@ const InformeGastos = () => {
                             placeholder="Selecciona un Proyecto"
                             className="max-w-xs"
                             value={selectedSupplier}
-                            
+
                             onChange={handleSupplierChange}
                           >
                             {suppliers.map((supplier) => (

@@ -11,7 +11,8 @@ import {
     limit,
     getDoc,
     doc,
-    updateDoc
+    updateDoc,
+    onSnapshot 
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
@@ -84,7 +85,7 @@ const Alumnosnlp = () => {
         church: "",
         payment_type: "",
         address: "",
-        code: "",
+        code: null,
         status: ""
     });
     const statusS = [
@@ -97,7 +98,7 @@ const Alumnosnlp = () => {
     const [church, setChurch] = useState("");
     const [payment_type, setPayment_type] = useState("");
     const [address, setAddress] = useState("");
-    const [code, setCode] = useState("");
+    const [code, setCode] = useState(null);
     const [status, setStatus] = useState("");
     const [selectKey, setSelectKey] = useState(0);
 
@@ -147,11 +148,9 @@ const Alumnosnlp = () => {
 
     //traer datos de FireStore
     useEffect(() => {
-        const fetchExpenses = async () => {
-            const q = query(collection(db, "sponsors"));
+        const q = query(collection(db, "sponsors"));
 
-            const querySnapshot = await getDocs(q);
-
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const expensesData = [];
             let indexs = 1;
             querySnapshot.forEach((doc) => {
@@ -159,9 +158,10 @@ const Alumnosnlp = () => {
             });
             setData(expensesData);
             setFilteredData(expensesData);
-            console.log(expensesData); // Inicializa los datos filtrados con los datos originales
-        };
-        fetchExpenses();
+        });
+
+        // Cleanup the listener on unmount
+        return () => unsubscribe();
     }, []);
 
 
@@ -169,7 +169,6 @@ const Alumnosnlp = () => {
         const selectedSupplierValue = event.target.value;
         // Actualiza el estado con el nuevo valor seleccionado
         setSelectedSupplier(selectedSupplierValue);
-        console.log("Sponsor:",formData);
 
         if (!selectedSupplierValue) {
             // Limpiar formulario después de la actualización
@@ -207,7 +206,7 @@ const Alumnosnlp = () => {
         setChurch("");
         setPayment_type("");
         setAddress("");
-        setCode("");
+        setCode(null);
         setStatus("");
 
         onAddClose();
@@ -218,6 +217,19 @@ const Alumnosnlp = () => {
         setErrorMessage("");
         // Cerrar el modal
         onModClose();
+    };
+    const getLastCode = async () => {
+        const sponsorsSnapshot = await getDocs(collection(db, "sponsors"));
+        let maxCode = 0;
+
+        sponsorsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.code > maxCode) {
+                maxCode = data.code;
+            }
+        });
+
+        return maxCode;
     };
 
     // Función para Agregar datos
@@ -230,7 +242,6 @@ const Alumnosnlp = () => {
                 !fullname ||
                 !email ||
                 !payment_type ||
-                !code ||
                 !status
             ) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
@@ -240,6 +251,9 @@ const Alumnosnlp = () => {
             }
 
             try {
+                // Obtener el último valor de 'code' y sumarle 1
+                const lastCode = await getLastCode();
+                const newCode = lastCode + 1;
 
                 const newData = {
                     fullname: fullname,
@@ -247,7 +261,7 @@ const Alumnosnlp = () => {
                     church: church,
                     payment_type: payment_type,
                     address: address,
-                    code: code,
+                    code: newCode,
                     status: status,
                 };
 
@@ -267,7 +281,7 @@ const Alumnosnlp = () => {
                 setChurch("");
                 setPayment_type("");
                 setAddress("");
-                setCode("");
+                setCode(null);
                 setStatus("");
 
             } catch (error) {
@@ -348,7 +362,7 @@ const Alumnosnlp = () => {
             church: "",
             payment_type: "",
             address: "",
-            code: ""
+            code: null
         });
 
     };
@@ -403,7 +417,7 @@ const Alumnosnlp = () => {
                                             <ModalHeader className="text-center flex flex-col gap-1">Registrar Nuevo Patrocinador</ModalHeader>
                                             <ModalBody>
                                                 <div className="grid gap-1 grid-cols-1">
-                                                {errorMessage && (
+                                                    {errorMessage && (
                                                         <div className="text-red-500 text-center mb-4">
                                                             {errorMessage}
                                                         </div>
@@ -416,7 +430,7 @@ const Alumnosnlp = () => {
                                                     <Input
                                                         className="w-64"
                                                         isRequired
-                                                        label="First Name"
+                                                        label="Full Name"
                                                         id="fullname"
                                                         value={fullname}
                                                         onChange={(e) => setFullname(e.target.value)}
@@ -457,14 +471,6 @@ const Alumnosnlp = () => {
                                                         onChange={(e) => setAddress(e.target.value)}
                                                     />
 
-                                                    <Input
-                                                        className="w-64"
-                                                        isRequired
-                                                        label="Code"
-                                                        id="code"
-                                                        value={code}
-                                                        onChange={(e) => setCode(e.target.value)}
-                                                    />
                                                     <RadioGroup
                                                         id="status"
                                                         className="text-sm"
@@ -477,7 +483,7 @@ const Alumnosnlp = () => {
                                                         <Radio value="paused">Paused</Radio>
                                                         <Radio value="removed">Removed</Radio>
                                                     </RadioGroup>
-                                                  
+
                                                 </div>
                                             </ModalBody>
                                             <ModalFooter>
@@ -541,7 +547,7 @@ const Alumnosnlp = () => {
                                                                 {sponsors.map((sponsor) => (
                                                                     <SelectItem key={sponsor.id} textValue={`${sponsor.fullname}`} >
                                                                         <div className="flex gap-2 items-center">
-                                                                        <Avatar className="flex-shrink-0" size="sm" src="../img/user.png" />
+                                                                            <Avatar className="flex-shrink-0" size="sm" src="../img/user.png" />
                                                                             <div className="flex flex-col">
                                                                                 <span className="text-small">{sponsor.fullname} </span>
                                                                             </div>
@@ -559,7 +565,7 @@ const Alumnosnlp = () => {
                                                     <Input
                                                         className="w-64"
                                                         isRequired
-                                                        label="First Name"
+                                                        label="Full Name"
                                                         id="fullname"
                                                         value={formData.fullname}
                                                         onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
@@ -599,15 +605,7 @@ const Alumnosnlp = () => {
                                                         value={formData.address}
                                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                                     />
-
-                                                    <Input
-                                                        className="w-64"
-                                                        isRequired
-                                                        label="Code"
-                                                        id="code"
-                                                        value={formData.code}
-                                                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                                    />
+                                                    <Chip size="md">N° Patrocinador: SP - {formData.code}</Chip>
                                                     <RadioGroup
                                                         id="status"
                                                         className="text-sm"

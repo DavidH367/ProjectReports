@@ -11,7 +11,8 @@ import {
     limit,
     getDoc,
     doc,
-    updateDoc
+    updateDoc,
+    onSnapshot 
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
@@ -26,6 +27,7 @@ import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicke
 
 const upReference = collection(db, "updates");
 const nlpReference = collection(db, "nlp");
+const nlpsReference = collection(db, "sponsors");
 const storage = getStorage();
 
 const formatDate = (timestamp) => {
@@ -67,11 +69,13 @@ const Alumnosnlp = () => {
         Inactivo: "warning",
         Egresó: "danger",
         Expulsión: "default",
-      };
+    };
 
     const [alumnos, setAlumnos] = useState([]);
     const [selectedAlumno, setSelectedAlumno] = useState(null);
     const [suppliers, setSuppliers] = useState([]);
+    const [sponsors, setSponsors] = useState([]);
+    const [selectedSponsors, setSelectedSponsors] = useState(null);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [formData, setFormData] = useState({
         firstname: "",
@@ -105,6 +109,7 @@ const Alumnosnlp = () => {
     const [co_siblings, setCo_siblings] = useState("");
     const [status, setStatus] = useState("");
     const [selectKey, setSelectKey] = useState(0);
+    const [selectKey2, setSelectKey2] = useState(100000);
     const grades = [
         { key: "1st grade", label: "1st grade" },
         { key: "2nd grade", label: "2nd grade" },
@@ -175,6 +180,34 @@ const Alumnosnlp = () => {
         fetchSuppliers();
     }, [nlpReference]);
 
+    useEffect(() => {
+        const fetchSponsors = async () => {
+            try {
+                const querySnapshot = await getDocs(nlpsReference);
+
+                const sponsorsData = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    sponsorsData.push({
+                        id: doc.id,
+                        fullname: data.fullname,
+                        email: data.email,
+                        payment_type: data.payment_type,
+                        status: data.status,
+                        code: data.code,
+                        address: data.address,
+                        church: data.church,
+                    });
+                });
+
+                setSponsors(sponsorsData);
+            } catch (error) {
+                console.error("Error fetching suppliers from Firestore:", error);
+            }
+        };
+        fetchSponsors();
+    }, [nlpsReference]);
+
     function handleSupplierChange(event) {
         const selectedSupplierValue = event.target.value;
         // Actualiza el estado con el nuevo valor seleccionado
@@ -210,15 +243,55 @@ const Alumnosnlp = () => {
         }
     }
 
-    useEffect(() => {
-        const fetchAlumnos = async () => {
-            const alumnosCollection = collection(db, 'nlp');
-            const alumnosSnapshot = await getDocs(alumnosCollection);
-            const alumnosList = alumnosSnapshot.docs.map(doc => doc.data());
-            setAlumnos(alumnosList);
-        };
+    function handleSponsorsChange(event) {
+        const selectedSponsorsValue = event.target.value;
+        // Actualiza el estado con el nuevo valor seleccionado
+        setSelectedSponsors(selectedSponsorsValue);
 
-        fetchAlumnos();
+        if (!selectedSponsorsValue) {
+            // Limpiar formulario después de la actualización
+            resetForm();
+        } else {
+            const selectedSponsorData = sponsors.find(sponsor => sponsor.id === selectedSponsorsValue);
+
+            const dateOfBirth = selectedSponsorData.date instanceof Timestamp
+                ? selectedSponsorData.date.toDate() // Convertir Timestamp a Date
+                : selectedSponsorData.date;
+
+            setFormData({
+                firstname: selectedSponsorData.firstname,
+                lastname: selectedSponsorData.lastname,
+                age: selectedSponsorData.age,
+                grade: selectedSponsorData.grade,
+                imageurl: selectedSponsorData.imageurl,
+                date: dateOfBirth,
+                indate: selectedSponsorData.indate,
+                sponsor_code: selectedSponsorData.sponsor_code,
+                father: selectedSponsorData.father,
+                mother: selectedSponsorData.mother,
+                household: selectedSponsorData.household,
+                siblings: selectedSponsorData.siblings,
+                co_siblings: selectedSponsorData.co_siblings,
+                status: selectedSponsorData.status,
+            });
+            // Convierte la marca de tiempo Firestore a objeto Date y establece el estado
+        }
+    }
+
+
+    useEffect(() => {
+        // Configurar el listener de Firestore
+        const alumnosCollection = collection(db, 'nlp');
+        const unsubscribe = onSnapshot(alumnosCollection, (snapshot) => {
+            const alumnosList = snapshot.docs.map(doc => ({
+                id: doc.id, 
+                ...doc.data()
+            }));
+            setAlumnos(alumnosList);
+        });
+
+        // Cleanup the listener on unmount
+        return () => unsubscribe();
     }, []);
 
     const handleOpen = (alumno) => {
@@ -275,6 +348,7 @@ const Alumnosnlp = () => {
     const handleModalClose = () => {
         // Restablecer los valores del formulario
         setSelectKey(prevKey => prevKey + 1);
+        setSelectKey2(prevKey => prevKey + 1);
         setArchivo(null);
         setDate(null);
         setFirstname("");
@@ -375,6 +449,7 @@ const Alumnosnlp = () => {
 
 
                 setSelectKey(prevKey => prevKey + 1);
+                setSelectKey2(prevKey => prevKey + 1);
                 setFirstname("");
                 setLastname("");
                 setAge("");
@@ -424,11 +499,6 @@ const Alumnosnlp = () => {
                 return; // No enviar el formulario si falta algún campo obligatorio
             }
 
-            // Verificar y establecer sponsor_code
-            if (!sponsor_code) {
-                setSponsor_code("N/A");
-            }
-
             try {
                 let logoUrl = formData.imageurl;
                 if (archivo) {
@@ -459,13 +529,13 @@ const Alumnosnlp = () => {
                     //grade: grade,
                     //date: formData.date instanceof Date ? formData.date : null,
                     //imageurl: logoUrl,
+                    //sponsor_code: formData.sponsor_code,
                     indate: parseFloat(formData.indate),
                     father: formData.father,
                     mother: formData.mother,
                     household: parseFloat(formData.household),
                     siblings: parseFloat(formData.siblings),
                     co_siblings: parseFloat(formData.co_siblings),
-                    sponsor_code: formData.sponsor_code,
                     status: formData.status,
                 };
 
@@ -476,6 +546,9 @@ const Alumnosnlp = () => {
                 // Solo actualizar el campo 'grade' si se ha cambiado
                 if (grade) {
                     newData.grade = grade;
+                }
+                if (sponsor_code) {
+                    newData.sponsor_code = sponsor_code;
                 }
 
                 const newUpData2 = {
@@ -522,6 +595,7 @@ const Alumnosnlp = () => {
             status: ""
         });
         setSelectKey(prevKey => prevKey + 1);
+        setSelectKey2(prevKey => prevKey + 1);
         setArchivo(null);
         setDate(null);
         setGrade("");
@@ -687,13 +761,26 @@ const Alumnosnlp = () => {
                                                         value={indate}
                                                         onChange={(e) => setIndate(e.target.value)} />
 
-                                                    <Input
-                                                        className="w-64"
-                                                        label="Sponsor Code"
+                                                    <Select
+                                                        key={selectKey2} // Clave para forzar re-renderizado
                                                         id="sponsor_code"
+                                                        items={sponsors}
+                                                        label="Asignar Sponsor:"
+                                                        placeholder="Selecciona un Patrocinador"
+                                                        className="max-w-xs"
                                                         value={sponsor_code}
                                                         onChange={(e) => setSponsor_code(e.target.value)}
-                                                    />
+                                                    >
+                                                        {sponsors.map((supplier) => (
+                                                            <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >
+                                                                <div className="flex gap-2 items-center">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-small">{supplier.code} {supplier.fullname}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </Select>
                                                     <label
                                                         className=" block text-sm font-medium leading-6 text-gray-900"
                                                     >
@@ -844,8 +931,6 @@ const Alumnosnlp = () => {
                                                         key={selectKey}
                                                         label="Select Grade"
                                                         placeholder={formData.grade}
-                                                        errorMessage={isValid || !touched ? "" : "You must select a grade"}
-                                                        isInvalid={isValid || !touched ? false : true}
                                                         id="grade"
                                                         value={grade}
                                                         onChange={(e) => setGrade(e.target.value)}
@@ -899,12 +984,29 @@ const Alumnosnlp = () => {
                                                         value={formData.indate}
                                                         onChange={(e) => setFormData({ ...formData, indate: e.target.value })} />
 
-                                                    <Input
-                                                        className="w-64"
-                                                        label="Sponsor Code"
+                                                    <Chip size="sm">Patrocinador Actual: {formData.sponsor_code}</Chip>
+                                                    <Select
+                                                        key={selectKey2} // Clave para forzar re-renderizado
                                                         id="sponsor_code"
-                                                        value={formData.sponsor_code}
-                                                        onChange={(e) => setFormData({ ...formData, sponsor_code: e.target.value })} />
+                                                        items={sponsors}
+                                                        label="Asignar Sponsor:"
+                                                        placeholder="Selecciona un Patrocinador"
+                                                        className="max-w-xs"
+                                                        value={sponsor_code}
+                                                        onChange={(e) => setSponsor_code(e.target.value)}
+                                                    >
+                                                        {sponsors.map((supplier) => (
+                                                            <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >
+                                                                <div className="flex gap-2 items-center">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-small">{supplier.code} {supplier.fullname}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </Select>
+
+
                                                     <label
                                                         className=" block text-sm font-medium leading-6 text-gray-900"
                                                     >
@@ -980,17 +1082,17 @@ const Alumnosnlp = () => {
                                     <CardFooter className="absolute bg-white/30 bottom-0 border-t-0 border-zinc-100/50 z-10 grid justify-items-center text-center -p-1">
                                         <div>
                                             <p className="text-black text-tiny"> Sponsor Code: N° {alumno.sponsor_code} </p>
-                                           
+
 
                                             <div className="grid grid-cols-1 justify-items-center">
                                                 <div className="py-1">
-                                                <Chip className="capitalize" radius="sm" color={statusColorMap[alumno.status]} size="sm" variant="faded">{alumno.status}</Chip>
+                                                    <Chip className="capitalize" radius="sm" color={statusColorMap[alumno.status]} size="sm" variant="faded">{alumno.status}</Chip>
                                                     <Button
                                                         className="text-black text-tiny w-16 h-6 rounded-md bg-white "
                                                         onPress={() => handleOpen(alumno)}>
                                                         More Info
                                                     </Button>
-                                                    
+
                                                 </div>
                                             </div>
 
@@ -1029,14 +1131,14 @@ const Alumnosnlp = () => {
                                         src={selectedAlumno.imageurl}
                                     />
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
-                                        
+
                                         <p className="text-base font-bold">Personal Information</p>
                                         <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
                                         <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
                                         <p className="text-sm ">Sponsor Code: N°{selectedAlumno.sponsor_code}</p>
                                         <p className="text-sm ">Age: {selectedAlumno.age} years old</p>
                                         <p className="text-sm">Grade: {selectedAlumno.grade}</p>
-                                        
+
                                         <Chip size="md">Fecha de Nacimiento: {selectedAlumno.date}</Chip>
                                         <p className="text-sm">Year entered: {selectedAlumno.indate}</p>
                                     </div>
@@ -1047,7 +1149,7 @@ const Alumnosnlp = () => {
                                         <p className="text-sm">People living in the household: {selectedAlumno.household}</p>
                                         <p className="text-sm">Siblings: {selectedAlumno.siblings}</p>
                                         <p className="text-sm">Siblings in the New Life Project: {selectedAlumno.co_siblings}</p>
-                                        
+
                                     </div>
                                 </ModalBody>
                                 <ModalFooter>
