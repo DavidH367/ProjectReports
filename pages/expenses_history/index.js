@@ -37,6 +37,10 @@ const InformeGastos = () => {
   const [formValid, setFormValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [filterValue, setFilterValue] = useState("");
+  const [ministries, setMinistries] = useState([]);
+  const [filteredMinistries, setFilteredMinistries] = useState([]);
+
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({
@@ -89,9 +93,6 @@ const InformeGastos = () => {
 
   }
 
-  //inicio para el filtro de datos
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]); // Agrega el estado para los datos filtrados
   //Valida acceso a la pagina
   const router = useRouter();
   const { user, errors, setErrors } = useAuth();
@@ -194,19 +195,27 @@ const InformeGastos = () => {
     const q = query(collection(db, "ministries"));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const expensesData = [];
+      const ministriesData = [];
       let indexs = 1;
       querySnapshot.forEach((doc) => {
-        expensesData.push({ ...doc.data(), indexs: indexs++ });
+        ministriesData.push({ ...doc.data(), indexs: indexs++ });
       });
-      setData(expensesData);
-      setFilteredData(expensesData);
-      console.log(expensesData); // Inicializa los datos filtrados con los datos originales
+      setMinistries(ministriesData);
+      setFilteredMinistries(ministriesData);
     });
 
     // Cleanup the listener on unmount
     return () => unsubscribe();
   }, []);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setFilterValue(value);
+    setFilteredMinistries(ministries.filter(ministry =>
+      ministry.ministry_name.toLowerCase().includes(value) ||
+      ministry.leader.toLowerCase().includes(value)
+    ));
+  };
 
   return (
     <>
@@ -224,8 +233,24 @@ const InformeGastos = () => {
           </h2>
           <div className="flex flex-wrap gap-3">
             {sizes.map((size) => (
-              <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white" key={size} onPress={() => handleOpen(size)}>Modificar Ministerio</Button>
+              <Button
+                className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white"
+                key={size}
+                onPress={() => {
+                  setSize(size);
+                  onOpen();
+                }}
+              >
+                Modificar Ministerio
+              </Button>
             ))}
+            <Input
+              className="w-64"
+              placeholder="Buscar por nombre del ministerio o líder..."
+              value={filterValue}
+              onChange={handleSearchChange}
+              mb={4}
+            />
           </div>
           <Modal
             size={size}
@@ -437,7 +462,7 @@ const InformeGastos = () => {
             <p className="text-center">PROYECTOS ACTUALUES</p>
           </h2>
           <Divider className="my-4" />
-          <ReusableTable data={filteredData} columns={columns} />
+          <ReusableTable data={filteredMinistries} columns={columns} />
         </div>
       </div>
     </>

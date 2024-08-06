@@ -26,7 +26,7 @@ const statusColorMap = {
   removed: "danger",
   paused: "warning",
 };
-const ITEMS_PER_PAGE = 11; // Cantidad de elementos por página
+const ITEMS_PER_PAGE = 10; // Cantidad de elementos por página
 
 const ReusableTable = ({ data, columns }) => {
 

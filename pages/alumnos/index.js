@@ -12,7 +12,7 @@ import {
     getDoc,
     doc,
     updateDoc,
-    onSnapshot 
+    onSnapshot
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
@@ -23,7 +23,8 @@ import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectIt
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
-
+import { SearchIcon } from "./SearchIcon";
+import { capitalize } from "./utils";
 
 const upReference = collection(db, "updates");
 const nlpReference = collection(db, "nlp");
@@ -127,23 +128,10 @@ const Alumnosnlp = () => {
     const [value, setValue] = React.useState("");
     const [touched, setTouched] = React.useState(false);
     const isValid = value === "1st grade" || "2nd grade" || "3rd grade" || "4th grade" || "5th grade" || "6th grade" || "7th grade" || "8th grade" || "9th grade" || "10th grade" || "11th grade";
-
+    
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = alumnos.slice(indexOfFirstItem, indexOfLastItem);
-
-    const totalPages = Math.ceil(alumnos.length / itemsPerPage);
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage(currentPage - 1);
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-    };
-
+    const [filterValue, setFilterValue] = useState("");
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -284,7 +272,7 @@ const Alumnosnlp = () => {
         const alumnosCollection = collection(db, 'nlp');
         const unsubscribe = onSnapshot(alumnosCollection, (snapshot) => {
             const alumnosList = snapshot.docs.map(doc => ({
-                id: doc.id, 
+                id: doc.id,
                 ...doc.data()
             }));
             setAlumnos(alumnosList);
@@ -293,6 +281,28 @@ const Alumnosnlp = () => {
         // Cleanup the listener on unmount
         return () => unsubscribe();
     }, []);
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
+    const handleSearchChange = (e) => {
+        setFilterValue(e.target.value);
+        setCurrentPage(1);
+    };
+    const filteredAlumnos = alumnos.filter(alumno =>
+        alumno.firstname.toLowerCase().includes(filterValue.toLowerCase()) ||
+        alumno.lastname.toLowerCase().includes(filterValue.toLowerCase())
+    );
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredAlumnos.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredAlumnos.length / itemsPerPage);
+
 
     const handleOpen = (alumno) => {
         const formattedAlumno = {
@@ -635,6 +645,14 @@ const Alumnosnlp = () => {
                                     onPress={onModOpen}>
                                     Actualizar Info Alumno
                                 </Button>
+                                <Input
+                                    className="w-64"
+                                    placeholder="Buscar por nombre o apellido..."
+                                    value={filterValue}
+                                    onChange={handleSearchChange}
+                                    mb={4}
+                                />
+
 
                             </div>
                             <Modal

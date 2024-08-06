@@ -72,7 +72,8 @@ const Alumnosnlp = () => {
         Inactivo: "warning",
         Egresó: "danger",
     };
-
+    const [filteredAlumnos, setFilteredAlumnos] = useState([]);
+    const [filterValue, setFilterValue] = useState("");
     const [alumnos, setAlumnos] = useState([]);
     const [selectedAlumno, setSelectedAlumno] = useState(null);
     const [suppliers, setSuppliers] = useState([]);
@@ -121,9 +122,9 @@ const Alumnosnlp = () => {
     const itemsPerPage = 8;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = alumnos.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = filteredAlumnos.slice(indexOfFirstItem, indexOfLastItem);
 
-    const totalPages = Math.ceil(alumnos.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredAlumnos.length / itemsPerPage);
 
     const handlePrevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -234,11 +235,20 @@ const Alumnosnlp = () => {
                 ...doc.data()
             }));
             setAlumnos(alumnosList);
+            setFilteredAlumnos(alumnosList);
         });
 
         // Cleanup the listener on unmount
         return () => unsubscribe();
     }, []);
+    const handleSearchChange = (e) => {
+        const value = e.target.value.toLowerCase();
+        setFilterValue(value);
+        setFilteredAlumnos(alumnos.filter(alumno =>
+            alumno.firstname.toLowerCase().includes(value) ||
+            alumno.lastname.toLowerCase().includes(value)
+        ));
+    };
 
     const handleOpen = (alumno) => {
         const formattedAlumno = {
@@ -565,6 +575,13 @@ const Alumnosnlp = () => {
                                     onPress={onModOpen}>
                                     Actualizar Info Maestro
                                 </Button>
+                                <Input
+                                    className="w-64"
+                                    placeholder="Buscar por nombre o apellido..."
+                                    value={filterValue}
+                                    onChange={handleSearchChange}
+                                    mb={4}
+                                />
 
                             </div>
                             <Modal

@@ -12,7 +12,7 @@ import {
     getDoc,
     doc,
     updateDoc,
-    onSnapshot 
+    onSnapshot
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
@@ -77,6 +77,8 @@ const Alumnosnlp = () => {
 
     const [alumnos, setAlumnos] = useState([]);
     const [sponsors, setSponsors] = useState([]);
+    const [filteredSponsors, setFilteredSponsors] = useState([]);
+    const [filterValue, setFilterValue] = useState("");
 
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [formData, setFormData] = useState({
@@ -88,11 +90,7 @@ const Alumnosnlp = () => {
         code: null,
         status: ""
     });
-    const statusS = [
-        { key: "active", label: "active" },
-        { key: "paused", label: "paused" },
-        { key: "removed", label: "removed" },
-    ];
+
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [church, setChurch] = useState("");
@@ -101,22 +99,6 @@ const Alumnosnlp = () => {
     const [code, setCode] = useState(null);
     const [status, setStatus] = useState("");
     const [selectKey, setSelectKey] = useState(0);
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = alumnos.slice(indexOfFirstItem, indexOfLastItem);
-
-    const totalPages = Math.ceil(alumnos.length / itemsPerPage);
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage(currentPage - 1);
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-    };
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -189,15 +171,27 @@ const Alumnosnlp = () => {
     }
 
     useEffect(() => {
-        const fetchAlumnos = async () => {
-            const alumnosCollection = collection(db, 'nlp');
-            const alumnosSnapshot = await getDocs(alumnosCollection);
-            const alumnosList = alumnosSnapshot.docs.map(doc => doc.data());
-            setAlumnos(alumnosList);
-        };
+        const q = query(collection(db, "sponsors"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const sponsorsData = [];
+            querySnapshot.forEach((doc) => {
+                sponsorsData.push({ id: doc.id, ...doc.data() });
+            });
+            setSponsors(sponsorsData);
+            setFilteredSponsors(sponsorsData);
+        });
 
-        fetchAlumnos();
+        return () => unsubscribe();
     }, []);
+
+    const handleSearchChange = (e) => {
+        const value = e.target.value.toLowerCase();
+        setFilterValue(value);
+        setFilteredSponsors(sponsors.filter(sponsor =>
+            sponsor.fullname.toLowerCase().includes(value) ||
+            sponsor.email.toLowerCase().includes(value)
+        ));
+    };
 
     const handleModalClose = () => {
         // Restablecer los valores del formulario
@@ -397,6 +391,13 @@ const Alumnosnlp = () => {
                                     Actualizar Info Patrocinador
                                 </Button>
 
+                                <Input
+                                    className="w-64"
+                                    placeholder="Buscar por nombre o email..."
+                                    value={filterValue}
+                                    onChange={handleSearchChange}
+                                    mb={4}
+                                />
                             </div>
                             <Modal
                                 size="md"
@@ -640,7 +641,7 @@ const Alumnosnlp = () => {
                         <p className="text-center">PROYECTOS ACTUALUES</p>
                     </h2>
                     <Divider className="my-4" />
-                    <ReusableTable data={filteredData} columns={columns} />
+                    <ReusableTable data={filteredSponsors} columns={columns} />
                 </div>
             </div>
         </>
