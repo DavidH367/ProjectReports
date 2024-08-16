@@ -7,9 +7,6 @@ import {
     collection,
     query,
     getDocs,
-    orderBy,
-    limit,
-    getDoc,
     doc,
     updateDoc,
     onSnapshot
@@ -18,42 +15,16 @@ import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import "react-datepicker/dist/react-datepicker.css";
-import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
-import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton, Divider, Textarea } from "@nextui-org/react";
+import { Button, Select, SelectItem, Chip, Avatar, Skeleton, Divider, Textarea } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio } from "@nextui-org/react";
-import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
-import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
 import ReusableTable from "../../Components/Form/ReusableTableS";
 import { columns } from "../../Data/sponsors/datas";
 
-
 const upReference = collection(db, "updates");
-const nlpReference = collection(db, "nlp");
-const supliersInfoRef = collection(db, "sponsors");
+const sponsorsInfoRef = collection(db, "sponsors");
 const storage = getStorage();
 
-const statusColorMap = {
-    active: "success",
-    paused: "danger",
-    vacation: "warning",
-};
-
-const formatDate = (timestamp) => {
-    const date = timestamp.toDate();
-    return date.toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-    });
-};
-
-
-const firestoreTimestamp = {
-    seconds: 1625247600, // Un ejemplo de marca de tiempo en segundos
-    nanoseconds: 0
-};
-
-const Alumnosnlp = () => {
+const SponsorsNLPComponent = () => {
     //Valida acceso a la pagina
     const router = useRouter();
     const { user, errors, setErrors } = useAuth();
@@ -69,18 +40,15 @@ const Alumnosnlp = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
     const { isOpen: isModOpen, onOpen: onModOpen, onClose: onModClose } = useDisclosure();
-    const [size, setSize] = React.useState('sm');
     const [scrollBehavior, setScrollBehavior] = React.useState("inside");
     const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
     const [formValid, setFormValid] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
-
-    const [alumnos, setAlumnos] = useState([]);
     const [sponsors, setSponsors] = useState([]);
     const [filteredSponsors, setFilteredSponsors] = useState([]);
     const [filterValue, setFilterValue] = useState("");
 
-    const [selectedSupplier, setSelectedSupplier] = useState(null);
+    const [selectedSponsor, setSelectedSponsor] = useState(null);
     const [formData, setFormData] = useState({
         fullname: "",
         email: "",
@@ -101,14 +69,14 @@ const Alumnosnlp = () => {
     const [selectKey, setSelectKey] = useState(0);
 
     useEffect(() => {
-        const fetchSuppliers = async () => {
+        const fetchSponsors = async () => {
             try {
-                const querySnapshot = await getDocs(supliersInfoRef);
+                const querySnapshot = await getDocs(sponsorsInfoRef);
 
-                const supplierData = [];
+                const sponsorData = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    supplierData.push({
+                    sponsorData.push({
                         id: doc.id,
                         fullname: data.fullname,
                         email: data.email,
@@ -120,51 +88,48 @@ const Alumnosnlp = () => {
                     });
                 });
 
-                setSponsors(supplierData);
+                setSponsors(sponsorData);
             } catch (error) {
-                console.error("Error fetching suppliers from Firestore:", error);
+                console.error("Error fetching sponsors from Firestore:", error);
             }
         };
-        fetchSuppliers();
-    }, [supliersInfoRef]);
+        fetchSponsors();
+    }, [sponsorsInfoRef]);
 
     //traer datos de FireStore
     useEffect(() => {
         const q = query(collection(db, "sponsors"));
-
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const expensesData = [];
+            const sponsorsData = [];
             let indexs = 1;
             querySnapshot.forEach((doc) => {
-                expensesData.push({ ...doc.data(), indexs: indexs++ });
+                sponsorsData.push({ ...doc.data(), indexs: indexs++ });
             });
-            setData(expensesData);
-            setFilteredData(expensesData);
+            setData(sponsorsData);
+            setFilteredData(sponsorsData);
         });
-
         // Cleanup the listener on unmount
         return () => unsubscribe();
     }, []);
 
-
-    function handleSupplierChange(event) {
-        const selectedSupplierValue = event.target.value;
+    function handleSponsorChange(event) {
+        const selectedSponsorValue = event.target.value;
         // Actualiza el estado con el nuevo valor seleccionado
-        setSelectedSupplier(selectedSupplierValue);
+        setSelectedSponsor(selectedSponsorValue);
 
-        if (!selectedSupplierValue) {
+        if (!selectedSponsorValue) {
             // Limpiar formulario después de la actualización
             resetForm();
         } else {
-            const selectedSupplierData = sponsors.find(supplier => supplier.id === selectedSupplierValue);
+            const selectedSponsorData = sponsors.find(supplier => supplier.id === selectedSponsorValue);
             setFormData({
-                fullname: selectedSupplierData.fullname,
-                email: selectedSupplierData.email,
-                church: selectedSupplierData.church,
-                payment_type: selectedSupplierData.payment_type,
-                address: selectedSupplierData.address,
-                code: selectedSupplierData.code,
-                status: selectedSupplierData.status,
+                fullname: selectedSponsorData.fullname,
+                email: selectedSponsorData.email,
+                church: selectedSponsorData.church,
+                payment_type: selectedSponsorData.payment_type,
+                address: selectedSponsorData.address,
+                code: selectedSponsorData.code,
+                status: selectedSponsorData.status,
             });
             // Convierte la marca de tiempo Firestore a objeto Date y establece el estado
         }
@@ -180,7 +145,6 @@ const Alumnosnlp = () => {
             setSponsors(sponsorsData);
             setFilteredSponsors(sponsorsData);
         });
-
         return () => unsubscribe();
     }, []);
 
@@ -266,7 +230,7 @@ const Alumnosnlp = () => {
                 };
 
                 // Crear un nuevo documento
-                await addDoc(supliersInfoRef, newData);
+                await addDoc(sponsorsInfoRef, newData);
                 await addDoc(upReference, newUpData);
 
                 // Restablecer los valores del formulario
@@ -295,7 +259,7 @@ const Alumnosnlp = () => {
         if (!guardando) {
             setGuardando(true);
 
-            const idDocumentos = selectedSupplier;
+            const idDocumentos = selectedSponsor;
 
             // Verificar si los campos obligatorios están llenos
             if (
@@ -329,7 +293,7 @@ const Alumnosnlp = () => {
                 };
 
                 // Actualizar el documento existente
-                const docRef = doc(supliersInfoRef, idDocumentos);
+                const docRef = doc(sponsorsInfoRef, idDocumentos);
                 await updateDoc(docRef, newData);
                 await addDoc(upReference, newUpData2);
 
@@ -541,9 +505,9 @@ const Alumnosnlp = () => {
                                                                 label="Actualizar a:"
                                                                 placeholder="Selecciona un Sponsor"
                                                                 className="max-w-xs"
-                                                                value={selectedSupplier}
+                                                                value={selectedSponsor}
 
-                                                                onChange={handleSupplierChange}
+                                                                onChange={handleSponsorChange}
                                                             >
                                                                 {sponsors.map((sponsor) => (
                                                                     <SelectItem key={sponsor.id} textValue={`${sponsor.fullname}`} >
@@ -648,4 +612,4 @@ const Alumnosnlp = () => {
     );
 };
 
-export default Alumnosnlp;
+export default SponsorsNLPComponent;

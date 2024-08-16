@@ -7,8 +7,6 @@ import {
   collection,
   query,
   getDocs,
-  orderBy,
-  limit,
   updateDoc,
   doc,
   onSnapshot
@@ -16,21 +14,24 @@ import {
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import ReusableTable from "../../Components/Form/ReusableTable";
-import { columns } from "../../Data/expenses_history/data";
-import FilterSection from "../../Components/Form/FilterSectionGastos";
-import { startOfDay, endOfDay } from "date-fns";
-import { parse, isAfter, isBefore } from "date-fns";
+import { columns } from "../../Data/ministry_records/data";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
 import "react-datepicker/dist/react-datepicker.css";
-import { CalendarDate, parseDate } from "@internationalized/date";
-import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 
 const supliersInfoRef = collection(db, "ministries");
 const upReference = collection(db, "updates");
 
-const InformeGastos = () => {
-
+const MinistryRecordsComponent = () => {
+  //Valida acceso a la pagina
+  const router = useRouter();
+  const { user, errors, setErrors } = useAuth();
+  useEffect(() => {
+    if (!user) {
+      setErrors("");
+      router.push("/auth/Login");
+    }
+  }, []);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [size, setSize] = React.useState('md')
   const sizes = ["5xl"];
@@ -41,8 +42,8 @@ const InformeGastos = () => {
   const [ministries, setMinistries] = useState([]);
   const [filteredMinistries, setFilteredMinistries] = useState([]);
 
-  const [suppliers, setSuppliers] = useState([]);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [ministry, setMinistry] = useState([]);
+  const [selectedMinistry, setSelectedMinistry] = useState(null);
   const [formData, setFormData] = useState({
     category: "",
     description: "",
@@ -53,21 +54,15 @@ const InformeGastos = () => {
     budget: "",
   });
 
-
   //estado para formulario
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
 
-  const handleOpen = (size) => {
-    setSize(size)
-    onOpen();
-  }
-
   function handleSupplierChange(event) {
-    const selectedSupplierValue = event.target.value;
+    const selectedMinistryValue = event.target.value;
     // Actualiza el estado con el nuevo valor seleccionado
-    setSelectedSupplier(selectedSupplierValue);
-    console.log("Seleccionado: ", selectedSupplierValue);
-    if (!selectedSupplierValue) {
+    setSelectedMinistry(selectedMinistryValue);
+    console.log("Seleccionado: ", selectedMinistryValue);
+    if (!selectedMinistryValue) {
       // Si no hay valor seleccionado, limpia el formulario
       setFormData({
         category: "",
@@ -79,39 +74,42 @@ const InformeGastos = () => {
         budget: "",
       });
     } else {
-      const selectedSupplierData = suppliers.find(supplier => supplier.id === selectedSupplierValue);
+      const selectedMinistryData = ministry.find(supplier => supplier.id === selectedMinistryValue);
       setFormData({
-        category: selectedSupplierData.category,
-        description: selectedSupplierData.description,
-        ministry_name: selectedSupplierData.ministry_name,
-        mision: selectedSupplierData.mision,
-        vision: selectedSupplierData.vision,
-        leader: selectedSupplierData.leader,
-        budget: selectedSupplierData.budget,
+        category: selectedMinistryData.category,
+        description: selectedMinistryData.description,
+        ministry_name: selectedMinistryData.ministry_name,
+        mision: selectedMinistryData.mision,
+        vision: selectedMinistryData.vision,
+        leader: selectedMinistryData.leader,
+      Ministry: selectedMinistryData.budget,
       });
     }
-
   }
+  const handleModalClose = () => {
+    // Si no hay valor seleccionado, limpia el formulario
+    setFormData({
+      category: "",
+      description: "",
+      ministry_name: "",
+      mision: "",
+      vision: "",
+      leader: "",
+      budget: "",
+    });
+    // Cerrar el modal
+    onClose();
+};
 
-  //Valida acceso a la pagina
-  const router = useRouter();
-  const { user, errors, setErrors } = useAuth();
   useEffect(() => {
-    if (!user) {
-      setErrors("");
-      router.push("/auth/Login");
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchSuppliers = async () => {
+    const fetchMinistries = async () => {
       try {
         const querySnapshot = await getDocs(supliersInfoRef);
 
-        const supplierData = [];
+        const MinistryData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          supplierData.push({
+          MinistryData.push({
             id: doc.id,
             name: data.ministry_name,
             category: data.category,
@@ -124,21 +122,19 @@ const InformeGastos = () => {
           });
         });
 
-        setSuppliers(supplierData);
+        setMinistry(MinistryData);
       } catch (error) {
         console.error("Error fetching suppliers from Firestore:", error);
       }
     };
-    fetchSuppliers();
+    fetchMinistries();
   }, []);
 
   // Función para guardar datos
   const handleSubmit = async () => {
-
     if (!guardando) {
       setGuardando(true);
-
-      const idDocumentos = selectedSupplier;
+      const idDocumentos = selectedMinistry;
 
       // Verificar si los campos obligatorios están llenos
       if (
@@ -157,7 +153,6 @@ const InformeGastos = () => {
       try {
         //id del ministerio
         const docRef = doc(supliersInfoRef, idDocumentos);
-
         const newData = {
           ministry_name: formData.ministry_name,
           category: formData.category,
@@ -174,7 +169,6 @@ const InformeGastos = () => {
           uid: user.uid,
         };
 
-
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
 
@@ -190,10 +184,8 @@ const InformeGastos = () => {
     setErrorMessage("");
   };
 
-
   useEffect(() => {
     const q = query(collection(db, "ministries"));
-
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const ministriesData = [];
       let indexs = 1;
@@ -255,10 +247,10 @@ const InformeGastos = () => {
           <Modal
             size={size}
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleModalClose}
           >
             <ModalContent>
-              {(onClose) => (
+              {(handleModalClose) => (
                 <>
                   <ModalHeader className="flex flex-col gap-1">INGRESE DATOS QUE DESEA CORREGIR</ModalHeader>
                   <ModalBody>
@@ -272,15 +264,15 @@ const InformeGastos = () => {
                             <p className="font-bold text-lg ">MINISTERIO</p>
                           </label>
                           <Select
-                            items={suppliers}
+                            items={ministry}
                             label="Actualizar a:"
                             placeholder="Selecciona un Proyecto"
                             className="max-w-xs"
-                            value={selectedSupplier}
+                            value={selectedMinistry}
 
                             onChange={handleSupplierChange}
                           >
-                            {suppliers.map((supplier) => (
+                            {ministry.map((supplier) => (
                               <SelectItem key={supplier.id} textValue={supplier.name}>
                                 <div className="flex gap-2 items-center">
                                   <div className="flex flex-col">
@@ -445,7 +437,7 @@ const InformeGastos = () => {
 
                   </ModalBody>
                   <ModalFooter>
-                    <Button color="danger" variant="light" onPress={onClose}>
+                    <Button color="danger" variant="light" onPress={handleModalClose}>
                       Cerrar
                     </Button>
                     <Button color="primary" onPress={handleSubmit}>
@@ -469,4 +461,4 @@ const InformeGastos = () => {
   );
 };
 
-export default InformeGastos;
+export default MinistryRecordsComponent;

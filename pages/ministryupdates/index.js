@@ -3,22 +3,16 @@ import Head from "next/head";
 import "firebase/firestore";
 import { db } from "../../lib/firebase";
 import {
-  addDoc,
   collection,
   query,
   getDocs,
-  orderBy,
-  limit,
 } from "firebase/firestore";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import ReusableTable from "../../Components/Form/ReusableTable";
-import { columns } from "../../Data/expenses/data";
-import FilterSection from "../../Components/Form/FilterSectionGastos";
-import { startOfDay, endOfDay } from "date-fns";
-import { parse, isAfter, isBefore } from "date-fns";
+import { columns } from "../../Data/minUpdates/data";
 
-const InformeGastos = () => {
+const UpdatesMinistriesComponent = () => {
   //inicio para el filtro de datos
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]); // Agrega el estado para los datos filtrados
@@ -32,45 +26,23 @@ const InformeGastos = () => {
     }
   }, []);
 
-  const applyFilter = ({ type, startDate, endDate }) => {
-    const filtered = data.filter((item) => {
-      const itemDate = item.date.toDate();
-
-      // Verifica si las fechas de inicio y fin están definidas
-      const start = startDate ? startOfDay(startDate) : null;
-      const end = endDate ? endOfDay(endDate) : null;
-
-      // Comprueba si la fecha del elemento está dentro del rango (si se proporcionan fechas)
-      const isWithinDateRange =
-        (!start || isAfter(itemDate, start)) &&
-        (!end || isBefore(itemDate, end));
-
-      return (
-        item.type.toLowerCase().includes(type.toLowerCase()) &&
-        isWithinDateRange
-      );
-    });
-
-    setFilteredData(filtered);
-  };
-
   //traer datos de FireStore
   useEffect(() => {
-    const fetchExpenses = async () => {
+    const fetchMinistryUpdates = async () => {
       const q = query(collection(db, "news"));
 
       const querySnapshot = await getDocs(q);
 
-      const expensesData = [];
+      const ministryNewsData = [];
       let indexs = 1;
       querySnapshot.forEach((doc) => {
-        expensesData.push({ ...doc.data(), indexs: indexs++ });
+        ministryNewsData.push({ ...doc.data(), indexs: indexs++ });
       });
-      setData(expensesData);
-      setFilteredData(expensesData);
-      console.log(expensesData); // Inicializa los datos filtrados con los datos originales
+      setData(ministryNewsData);
+      setFilteredData(ministryNewsData);
+      console.log(ministryNewsData); // Inicializa los datos filtrados con los datos originales
     };
-    fetchExpenses();
+    fetchMinistryUpdates();
   }, []);
 
   return (
@@ -93,4 +65,4 @@ const InformeGastos = () => {
   );
 };
 
-export default InformeGastos;
+export default UpdatesMinistriesComponent;

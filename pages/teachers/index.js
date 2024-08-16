@@ -5,11 +5,7 @@ import { db } from "../../lib/firebase";
 import {
     addDoc,
     collection,
-    query,
     getDocs,
-    orderBy,
-    limit,
-    getDoc,
     doc,
     updateDoc,
     onSnapshot
@@ -18,34 +14,16 @@ import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import "react-datepicker/dist/react-datepicker.css";
-import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio, Textarea } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
 
-
 const upReference = collection(db, "updates");
-const nlpReference = collection(db, "teachers");
-const nlpsReference = collection(db, "sponsors");
-
+const teachersNLPReference = collection(db, "teachers");
+const sponsorNLPReference = collection(db, "sponsors");
 const storage = getStorage();
-
-const formatDate = (timestamp) => {
-    const date = timestamp.toDate();
-    return date.toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-    });
-};
-
-const firestoreTimestamp = {
-    seconds: 1625247600, // Un ejemplo de marca de tiempo en segundos
-    nanoseconds: 0
-};
-
-const Alumnosnlp = () => {
+const TeachersNLPComponent = () => {
     //Valida acceso a la pagina
     const router = useRouter();
     const { user, errors, setErrors } = useAuth();
@@ -65,19 +43,18 @@ const Alumnosnlp = () => {
     const [formValid, setFormValid] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [sponsors, setSponsors] = useState([]);
-    const [selectedSponsors, setSelectedSponsors] = useState(null);
 
     const statusColorMap = {
         Activo: "success",
         Inactivo: "warning",
         Egresó: "danger",
     };
-    const [filteredAlumnos, setFilteredAlumnos] = useState([]);
+    const [filteredTeachers, setFilteredTeachers] = useState([]);
     const [filterValue, setFilterValue] = useState("");
-    const [alumnos, setAlumnos] = useState([]);
-    const [selectedAlumno, setSelectedAlumno] = useState(null);
-    const [suppliers, setSuppliers] = useState([]);
-    const [selectedSupplier, setSelectedSupplier] = useState(null);
+    const [teachers, setTeachers] = useState([]);
+    const [selectedTeacher, setSelectedTeacher] = useState(null);
+    const [teacherss, setTeacherss] = useState([]);
+    const [selectedTeachers, setSelectedTeachers] = useState(null);
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
@@ -114,18 +91,12 @@ const Alumnosnlp = () => {
 
     ];
 
-    const [value, setValue] = React.useState("");
-    const [touched, setTouched] = React.useState(false);
-    const isValid = value === "Spanish" || "Maths" || "History" || "Sciences" || "Information Technologies" || "Arts and Music" || "Bible Classes";
-
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredAlumnos.slice(indexOfFirstItem, indexOfLastItem);
-
-    const totalPages = Math.ceil(filteredAlumnos.length / itemsPerPage);
-
+    const currentItems = filteredTeachers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredTeachers.length / itemsPerPage);
     const handlePrevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
@@ -134,16 +105,15 @@ const Alumnosnlp = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-
     useEffect(() => {
-        const fetchSuppliers = async () => {
+        const fetchTeachers = async () => {
             try {
-                const querySnapshot = await getDocs(nlpReference);
+                const querySnapshot = await getDocs(teachersNLPReference);
 
-                const supplierData = [];
+                const teachersData = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    supplierData.push({
+                    teachersData.push({
                         id: doc.id,
                         firstname: data.firstname,
                         lastname: data.lastname,
@@ -158,19 +128,19 @@ const Alumnosnlp = () => {
                     });
                 });
 
-                setSuppliers(supplierData);
+                setTeacherss(teachersData);
             } catch (error) {
-                console.error("Error fetching suppliers from Firestore:", error);
+                console.error("Error fetching teachers from Firestore:", error);
             }
         };
-        fetchSuppliers();
-    }, [nlpReference]);
+        fetchTeachers();
+    }, [teachersNLPReference]);
 
 
     useEffect(() => {
         const fetchSponsors = async () => {
             try {
-                const querySnapshot = await getDocs(nlpsReference);
+                const querySnapshot = await getDocs(sponsorNLPReference);
 
                 const sponsorsData = [];
                 querySnapshot.forEach((doc) => {
@@ -193,34 +163,34 @@ const Alumnosnlp = () => {
             }
         };
         fetchSponsors();
-    }, [nlpsReference]);
+    }, [sponsorNLPReference]);
 
-    function handleSupplierChange(event) {
-        const selectedSupplierValue = event.target.value;
+    function handleTeacherChange(event) {
+        const selectedTeacherValue = event.target.value;
         // Actualiza el estado con el nuevo valor seleccionado
-        setSelectedSupplier(selectedSupplierValue);
+        setSelectedTeachers(selectedTeacherValue);
 
-        if (!selectedSupplierValue) {
+        if (!selectedTeacherValue) {
             // Limpiar formulario después de la actualización
             resetForm();
         } else {
-            const selectedSupplierData = suppliers.find(supplier => supplier.id === selectedSupplierValue);
+            const selectedTeacherData = teacherss.find(supplier => supplier.id === selectedTeacherValue);
 
-            const dateOfBirth = selectedSupplierData.date instanceof Timestamp
-                ? selectedSupplierData.date.toDate() // Convertir Timestamp a Date
-                : selectedSupplierData.date;
+            const dateOfBirth = selectedTeacherData.date instanceof Timestamp
+                ? selectedTeacherData.date.toDate() // Convertir Timestamp a Date
+                : selectedTeacherData.date;
 
             setFormData({
-                firstname: selectedSupplierData.firstname,
-                lastname: selectedSupplierData.lastname,
-                age: selectedSupplierData.age,
-                area: selectedSupplierData.area,
-                imageurl: selectedSupplierData.imageurl,
+                firstname: selectedTeacherData.firstname,
+                lastname: selectedTeacherData.lastname,
+                age: selectedTeacherData.age,
+                area: selectedTeacherData.area,
+                imageurl: selectedTeacherData.imageurl,
                 date: dateOfBirth,
-                description: selectedSupplierData.description,
-                project: selectedSupplierData.project,
-                sponsor_code: selectedSupplierData.sponsor_code,
-                status: selectedSupplierData.status,
+                description: selectedTeacherData.description,
+                project: selectedTeacherData.project,
+                sponsor_code: selectedTeacherData.sponsor_code,
+                status: selectedTeacherData.status,
             });
             // Convierte la marca de tiempo Firestore a objeto Date y establece el estado
         }
@@ -228,14 +198,14 @@ const Alumnosnlp = () => {
 
     useEffect(() => {
         // Configurar el listener de Firestore
-        const alumnosCollection = collection(db, 'teachers');
-        const unsubscribe = onSnapshot(alumnosCollection, (snapshot) => {
-            const alumnosList = snapshot.docs.map(doc => ({
+        const teachersCollection = collection(db, 'teachers');
+        const unsubscribe = onSnapshot(teachersCollection, (snapshot) => {
+            const teachersList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-            setAlumnos(alumnosList);
-            setFilteredAlumnos(alumnosList);
+            setTeachers(teachersList);
+            setFilteredTeachers(teachersList);
         });
 
         // Cleanup the listener on unmount
@@ -244,18 +214,18 @@ const Alumnosnlp = () => {
     const handleSearchChange = (e) => {
         const value = e.target.value.toLowerCase();
         setFilterValue(value);
-        setFilteredAlumnos(alumnos.filter(alumno =>
-            alumno.firstname.toLowerCase().includes(value) ||
-            alumno.lastname.toLowerCase().includes(value)
+        setFilteredTeachers(teachers.filter(teacher =>
+            teacher.firstname.toLowerCase().includes(value) ||
+            teacher.lastname.toLowerCase().includes(value)
         ));
     };
 
-    const handleOpen = (alumno) => {
-        const formattedAlumno = {
-            ...alumno,
-            date: alumno.date ? formatDate2(alumno.date) : null,
+    const handleOpen = (teacher) => {
+        const formattedTeacher = {
+            ...teacher,
+            date: teacher.date ? formatDate2(teacher.date) : null,
         }
-        setSelectedAlumno(formattedAlumno);
+        setSelectedTeacher(formattedTeacher);
         onOpen();
     };
 
@@ -393,7 +363,7 @@ const Alumnosnlp = () => {
                 };
 
                 // Crear un nuevo documento
-                await addDoc(nlpReference, newData);
+                await addDoc(teachersNLPReference, newData);
                 await addDoc(upReference, newUpData);
 
 
@@ -429,7 +399,7 @@ const Alumnosnlp = () => {
         if (!guardando) {
             setGuardando(true);
 
-            const idDocumentos = selectedSupplier;
+            const idDocumentos = selectedTeachers;
 
             // Verificar si los campos obligatorios están llenos
             if (
@@ -443,7 +413,6 @@ const Alumnosnlp = () => {
                 setGuardando(false);
                 return; // No enviar el formulario si falta algún campo obligatorio
             }
-
 
             try {
                 let logoUrl = formData.imageurl;
@@ -501,7 +470,7 @@ const Alumnosnlp = () => {
                 };
 
                 // Actualizar el documento existente
-                const docRef = doc(nlpReference, idDocumentos);
+                const docRef = doc(teachersNLPReference, idDocumentos);
                 await updateDoc(docRef, newData);
                 await addDoc(upReference, newUpData2);
 
@@ -791,15 +760,15 @@ const Alumnosnlp = () => {
                                                         <div className="mt-2 pr-4">
                                                             <Select
                                                                 key={selectKey} // Clave para forzar re-renderizado
-                                                                items={suppliers}
+                                                                items={teacherss}
                                                                 label="Actualizar a:"
                                                                 placeholder="Selecciona un Alumno"
                                                                 className="max-w-xs"
-                                                                value={selectedSupplier}
+                                                                value={selectedTeachers}
 
-                                                                onChange={handleSupplierChange}
+                                                                onChange={handleTeacherChange}
                                                             >
-                                                                {suppliers.map((supplier) => (
+                                                                {teacherss.map((supplier) => (
                                                                     <SelectItem key={supplier.id} textValue={`${supplier.firstname} ${supplier.lastname}`} >
                                                                         <div className="flex gap-2 items-center">
                                                                             <Avatar className="flex-shrink-0" size="sm" src={supplier.imageurl} />
@@ -1010,7 +979,7 @@ const Alumnosnlp = () => {
                 </div>
             </div>
 
-            {selectedAlumno && (
+            {selectedTeacher && (
                 <Modal
                     size="md"
                     isOpen={isOpen}
@@ -1020,29 +989,29 @@ const Alumnosnlp = () => {
                     <ModalContent>
                         {() => (
                             <>
-                                <ModalHeader className="text-center flex flex-col gap-1">{selectedAlumno.firstname} {selectedAlumno.lastname}</ModalHeader>
+                                <ModalHeader className="text-center flex flex-col gap-1">{selectedTeacher.firstname} {selectedTeacher.lastname}</ModalHeader>
                                 <ModalBody>
                                     <Image
                                         removeWrapper
                                         alt="Child Cards"
                                         className="z-0 w-[250px] h-[300px] scale-90 -translate-y-6 translate-x-20 object-cover"
-                                        src={selectedAlumno.imageurl}
+                                        src={selectedTeacher.imageurl}
                                     />
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
 
                                         <p className="text-base font-bold">Personal Information</p>
-                                        <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
-                                        <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
-                                        <p className="text-sm ">Sponsor Code: N°{selectedAlumno.sponsor_code}</p>
-                                        <p className="text-sm ">Age: {selectedAlumno.age} years old</p>
-                                        <p className="text-sm">Area: {selectedAlumno.area}</p>
+                                        <Chip size="md">Full Name: {selectedTeacher.firstname} {selectedTeacher.lastname}</Chip>
+                                        <Chip className="capitalize" color={statusColorMap[selectedTeacher.status]} size="md" variant="flat">{selectedTeacher.status}</Chip>
+                                        <p className="text-sm ">Sponsor Code: N°{selectedTeacher.sponsor_code}</p>
+                                        <p className="text-sm ">Age: {selectedTeacher.age} years old</p>
+                                        <p className="text-sm">Area: {selectedTeacher.area}</p>
 
-                                        <Chip size="md">Fecha de Ingreso: {selectedAlumno.date}</Chip>
+                                        <Chip size="md">Fecha de Ingreso: {selectedTeacher.date}</Chip>
                                     </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
                                         <p className="text-base font-bold">About</p>
-                                        <p className="text-sm">{selectedAlumno.description}</p>
-                                        <p className="text-sm">Tiene como objetivo: {selectedAlumno.project}</p>
+                                        <p className="text-sm">{selectedTeacher.description}</p>
+                                        <p className="text-sm">Tiene como objetivo: {selectedTeacher.project}</p>
                                     </div>
                                 </ModalBody>
                                 <ModalFooter>
@@ -1062,4 +1031,4 @@ const Alumnosnlp = () => {
     );
 };
 
-export default Alumnosnlp;
+export default TeachersNLPComponent;

@@ -1,5 +1,4 @@
 import Head from "next/head";
-
 import React, { useState, useEffect } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../lib/context/AuthContext";
@@ -14,15 +13,11 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 import { useRouter } from "next/router";
 
-const nlpReference = collection(db, "ministries");
+const ministryReference = collection(db, "ministries");
 const upReference = collection(db, "updates");
 const storage = getStorage();
-const imagenesRef = ref(storage, 'imagenes/imagenes/logos'); // Reemplaza 'imagenes' con la carpeta deseada
 
-const ConsultasClientes = () => {
-  //datos para factura
-  //usos de datos
-
+const NewMinistryComponent = () => {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [logo_url, setLogo_url] = useState("");
@@ -42,7 +37,6 @@ const ConsultasClientes = () => {
     { key: "Churchs", label: "Churchs" }
   ];
 
-
   //estado para formulario
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
 
@@ -58,7 +52,6 @@ const ConsultasClientes = () => {
       router.push("/auth/Login");
     }
   }, []);
-
 
   const handleChange = (event) => {
     const archivo = event.target.files[0];
@@ -137,7 +130,7 @@ const ConsultasClientes = () => {
           uid: user.uid,
         };
 
-        await addDoc(nlpReference, newData);
+        await addDoc(ministryReference, newData);
         await addDoc(upReference, newUpData);
 
         // Limpiar los campos del formulario después de guardar
@@ -412,4 +405,4 @@ const ConsultasClientes = () => {
   );
 };
 
-export default ConsultasClientes;
+export default NewMinistryComponent;

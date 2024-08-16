@@ -35,7 +35,7 @@ const UserRegister = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [suppliers, setSuppliers] = useState([]);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [selectedUserss, setselectedUserss] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -44,11 +44,11 @@ const UserRegister = () => {
   });
 
   function handleSupplierChange(event) {
-    const selectedSupplierValue = event.target.value;
+    const selectedUserssValue = event.target.value;
     // Actualiza el estado con el nuevo valor seleccionado
-    setSelectedSupplier(selectedSupplierValue);
-    console.log("Seleccionado: ", selectedSupplierValue);
-    if (!selectedSupplierValue) {
+    setselectedUserss(selectedUserssValue);
+    console.log("Seleccionado: ", selectedUserssValue);
+    if (!selectedUserssValue) {
       // Si no hay valor seleccionado, limpia el formulario
       setFormData({
         firstName: "",
@@ -56,11 +56,11 @@ const UserRegister = () => {
         role: "",
       });
     } else {
-      const selectedSupplierData = suppliers.find(supplier => supplier.id === selectedSupplierValue);
+      const selectedUserssData = suppliers.find(supplier => supplier.id === selectedUserssValue);
       setFormData({
-        firstName: selectedSupplierData.firstName,
-        lastName: selectedSupplierData.lastName,
-        role: selectedSupplierData.role,
+        firstName: selectedUserssData.firstName,
+        lastName: selectedUserssData.lastName,
+        role: selectedUserssData.role,
       });
     }
   }
@@ -130,7 +130,7 @@ const UserRegister = () => {
     if (!guardando) {
       setGuardando(true);
 
-      const idDocumentos = selectedSupplier;
+      const idDocumentos = selectedUserss;
 
       // Verificar si los campos obligatorios están llenos
       if (
@@ -169,7 +169,7 @@ const UserRegister = () => {
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
 
-        setSelectedSupplier(null);
+        setselectedUserss(null);
         setSelectKey(prevKey => prevKey + 1);
         setFormData({
           firstName: "",
@@ -297,7 +297,7 @@ const UserRegister = () => {
                               label="Actualizar a:"
                               placeholder="Selecciona un Usuario"
                               className="max-w-xs"
-                              value={selectedSupplier}
+                              value={selectedUserss}
 
                               onChange={handleSupplierChange}
                             >

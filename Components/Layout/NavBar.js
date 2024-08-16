@@ -62,8 +62,8 @@ export default function App() {
     { text: "Inicio", url: "../" },
     { text: "ESCUELA NLP", url: "/reportes" },
     { text: "MINISTERIOS", url: "/purchasing" },
-    { text: "ACTUALIZACION DE MINISTERIOS", url: "/sales" },
-    { text: "REGISTRO DE EVENTOS", url: "/supliers" },
+    { text: "ACTUALIZACION DE MINISTERIOS", url: "/news" },
+    { text: "REGISTRO DE EVENTOS", url: "/eventos" },
     { text: "USUARIOS", url: "/users" },
   ];
 
@@ -92,28 +92,28 @@ export default function App() {
           </Link>
         </NavbarBrand>
         <NavbarItem >
-          <Link href="/reportes" color="foreground" aria-current="page" isBlock>
+          <Link href="/nlpSchool" color="foreground" aria-current="page" isBlock>
           <p className="text-large">
             ESCUELA NLP
           </p>
           </Link>
         </NavbarItem>
         <NavbarItem >
-          <Link href="/purchasing" color="foreground" aria-current="page" isBlock>
+          <Link href="/ministry" color="foreground" aria-current="page" isBlock>
           <p className="text-large">
             MINISTERIOS
           </p>
           </Link>
         </NavbarItem>
         <NavbarItem>
-          <Link color="foreground" href="/sales" isBlock>
+          <Link color="foreground" href="/news" isBlock>
             <p className="text-large">
               NOTICIAS DE MINISTERIOS
             </p>
           </Link>
         </NavbarItem>
         <NavbarItem>
-          <Link color="foreground" href="/supliers" isBlock>
+          <Link color="foreground" href="/eventos" isBlock>
             <p className="text-large">
               R. EVENTOS  
             </p>

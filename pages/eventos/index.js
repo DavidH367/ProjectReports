@@ -15,7 +15,7 @@ import {
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import ReusableTable from "../../Components/Form/ReusableTable";
-import { columns } from "../../Data/supliers/datas";
+import { columns } from "../../Data/eventos/datas";
 import FilterSection from "../../Components/Form/FilterSectionGastos";
 import { startOfDay, endOfDay } from "date-fns";
 import { parse, isAfter, isBefore } from "date-fns";
@@ -23,7 +23,6 @@ import { parse, isAfter, isBefore } from "date-fns";
 const InformeGastos = () => {
   //inicio para el filtro de datos
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]); // Agrega el estado para los datos filtrados
   const [combinedData, setCombinedData] = useState([]); 
   //Valida acceso a la pagina
   const router = useRouter();
@@ -39,7 +38,7 @@ const InformeGastos = () => {
 
   //traer datos de FireStore
   useEffect(() => {
-    const fetchExpenses = async () => {
+    const fetchEventos = async () => {
       // Consulta a la colección "updates"
       const updatesQuery = query(collection(db, "updates"),orderBy("date","desc"));
       const updatesSnapshot = await getDocs(updatesQuery);
@@ -88,7 +87,7 @@ const InformeGastos = () => {
       console.log(combinedData); // Inicializa los datos filtrados con los datos originales
     };
   
-    fetchExpenses();
+    fetchEventos();
   }, []);
   
 

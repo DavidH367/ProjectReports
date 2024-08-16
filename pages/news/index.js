@@ -7,12 +7,10 @@ import {
   Card,
   CardFooter,
   Image,
-  Button,
   CardHeader,
   CardBody,
   Divider,
 } from "@nextui-org/react";
-
 
 const MainComponent = () => {
   
@@ -28,7 +26,7 @@ const MainComponent = () => {
       <div className="justify-center">
         <div className=" p-4 grid gap-12 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2  justify-items-center">
           <div>
-            <Link href="../../sales_history">
+            <Link href="../../news_history">
               <Card
                 className="py-4"
                 isPressable
@@ -53,7 +51,7 @@ const MainComponent = () => {
             </Link>
           </div>
           <div>
-            <Link href="../../expenses">
+            <Link href="../../ministryupdates">
               <Card
                 className="py-4 "
                 isPressable
@@ -77,14 +75,8 @@ const MainComponent = () => {
               </Card>
             </Link>
           </div>
-
-
-        
         </div>
-
-        
       </div>
-      
     </div>
   );
 };

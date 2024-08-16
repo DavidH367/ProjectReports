@@ -7,34 +7,23 @@ import {
   collection,
   query,
   getDocs,
-  orderBy,
-  limit,
-  where
 } from "firebase/firestore";
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { tipoC } from "../../Data/sales/datas";
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
-import { CalendarDate, parseDate } from "@internationalized/date";
 import "react-datepicker/dist/react-datepicker.css";
 import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-
-const updatesRef = collection(db, "news");
+const updatesRef = collection(db, "updates");
 const storage = getStorage();
-const supliersInfoRef = collection(db, "ministries");
-const upReference = collection(db, "updates");
+const ministriesInfoRef = collection(db, "ministries");
+const upReference = collection(db, "news");
 
+const MinistriesComponent = () => {
 
-const MainComponent = () => {
-
-  //select con proveedores
-  const [suppliers, setSuppliers] = useState([]);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
-
-  const [doci, setDoci] = useState("");
+  const [ministries, setMinistries] = useState([]);
+  const [selectedMinistry, setSelectedMinistry] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dateup, setDateup] = useState(null);
@@ -89,46 +78,44 @@ const MainComponent = () => {
       const q = query(collection(db, "ministries"));
       const querySnapshot = await getDocs(q);
 
-      const salesData = [];
+      const ministriesData = [];
       let indexs = 1;
       querySnapshot.forEach((doc) => {
-        salesData.push({ ...doc.data(), Sales_id: doc.id, indexs: indexs++ });
+        ministriesData.push({ ...doc.data(), Sales_id: doc.id, indexs: indexs++ });
       });
-      setData(salesData);
-      setFilteredData(salesData); // Inicializa los datos filtrados con los datos originales
+      setData(ministriesData);
+      setFilteredData(ministriesData); // Inicializa los datos filtrados con los datos originales
     };
 
     fetchData();
   }, []);
 
   useEffect(() => {
-    const fetchSuppliers = async () => {
+    const fetchMinistries = async () => {
       try {
-        const querySnapshot = await getDocs(supliersInfoRef);
-
-        const supplierData = [];
+        const querySnapshot = await getDocs(ministriesInfoRef);
+        const ministryData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          supplierData.push({
+          ministryData.push({
             id: doc.id,
             name: data.ministry_name,
 
           });
         });
 
-        setSuppliers(supplierData);
+        setMinistries(ministryData);
       } catch (error) {
-        console.error("Error fetching suppliers from Firestore:", error);
+        console.error("Error fetching ministries from Firestore:", error);
       }
     };
-    fetchSuppliers();
-  }, [supliersInfoRef]);
+    fetchMinistries();
+  }, [ministriesInfoRef]);
 
-  function handleSupplierChange(event) {
-    const selectedSupplierValue = event.target.value;
+  function handleMinistryChange(event) {
+    const selectedMinistryValue = event.target.value;
     // Actualiza el estado con el nuevo valor seleccionado
-    setSelectedSupplier(selectedSupplierValue);
-    console.log("Selecciona: ", selectedSupplierValue);
+    setSelectedMinistry(selectedMinistryValue);
   }
 
   // Función para convertir CalendarDate a Date
@@ -142,7 +129,7 @@ const MainComponent = () => {
     event.preventDefault();
     if (!guardando) {
       setGuardando(true);
-      const idDocumentos = selectedSupplier;
+      const idDocumentos = selectedMinistry;
 
       // Verificar si los campos obligatorios están llenos
       if (!title || !description || !reached || !zone) {
@@ -243,7 +230,7 @@ const MainComponent = () => {
         await addDoc(upReference, newUpData);
 
         // Limpiar los campos del formulario después de guardar
-        setSelectedSupplier(null);
+        setSelectedMinistry(null);
         setSelectKey(prevKey => prevKey + 1);
         setTitle("");
         setDescription("");
@@ -295,12 +282,12 @@ const MainComponent = () => {
                 <div className="mt-2 pr-4">
                   <Select
                     key={selectKey} // Clave para forzar re-renderizado
-                    items={suppliers}
+                    items={ministries}
                     label="Actualizar a:"
                     placeholder="Selecciona un Proyecto"
                     className="max-w-xs"
-                    value={selectedSupplier}
-                    onChange={handleSupplierChange}
+                    value={selectedMinistry}
+                    onChange={handleMinistryChange}
                   >
                     {(user) => (
                       <SelectItem key={user.id} textValue={user.name}>
@@ -482,4 +469,4 @@ const MainComponent = () => {
   );
 };
 
-export default MainComponent;
+export default MinistriesComponent;
