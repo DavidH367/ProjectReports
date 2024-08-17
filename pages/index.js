@@ -7,9 +7,6 @@ import { useRouter } from "next/router";
 import { Divider } from "@nextui-org/react";
 import { Image } from "@nextui-org/react";
 
-
-import CafePerformance from "../Components/Form/coffee_performance";
-
 export default function Home() {
   const { user, setErrors } = useAuth();
   const [localUser, setLocalUser] = useState({});
@@ -74,7 +71,6 @@ export default function Home() {
             className="m-5"
           />
         </div>
-
       </div>
     </>
   );

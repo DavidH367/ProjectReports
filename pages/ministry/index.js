@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Head from "next/head";
 import "firebase/firestore";
+import { useAuth } from "../../lib/context/AuthContext";
+import { useRouter } from "next/router";
+import withAuth from "../../lib/hoc/withAuth"; // Importa el HOC desde la ruta correcta
 
 import {
   Card,
@@ -14,7 +17,24 @@ import {
 } from "@nextui-org/react";
 
 
-const Purchasing1 = () => {
+const MinistryComponent = () => {
+  const router = useRouter();
+  const { user, errors, setErrors } = useAuth();
+  const [localUser, setLocalUser] = useState({});
+
+  useEffect(() => {
+  if (!user) {
+    setErrors("");
+    router.push("/auth/Login");
+  } else if (user.first_login) {
+    router.push("/auth/ResetPassword");
+  } else {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    console.log("Usuario cargado:", storedUser); // Debug
+    setLocalUser(storedUser);
+  }
+}, [user, setErrors, router]);
+
 
   return (
     <div className={"homeSearches"}>
@@ -77,15 +97,11 @@ const Purchasing1 = () => {
               </Card>
             </Link>
           </div>
-
-        
         </div>
-
-        
       </div>
-      
     </div>
   );
 };
 
-export default Purchasing1;
+// Exporta el componente envuelto con el HOC, definiendo los roles permitidos
+export default MinistryComponent;

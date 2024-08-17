@@ -84,7 +84,6 @@ const InformeGastos = () => {
   
       setData(combinedData);
       setCombinedData(combinedData);
-      console.log(combinedData); // Inicializa los datos filtrados con los datos originales
     };
   
     fetchEventos();

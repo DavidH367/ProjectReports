@@ -11,7 +11,8 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import {
@@ -23,7 +24,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDi
 import { Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 
 
-const supliersInfoRef = collection(db, "users");
+const UsuariosInfoRef = collection(db, "users");
 const upReference = collection(db, "updates");
 
 const UserRegister = () => {
@@ -34,14 +35,25 @@ const UserRegister = () => {
   const [formValid, setFormValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [suppliers, setSuppliers] = useState([]);
+  const [Usuarios, setUsuarios] = useState([]);
   const [selectedUserss, setselectedUserss] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     role: "",
+    state:""
   });
+
+  const roles = [
+    { key: "ADMINISTRADOR", label: "ADMINISTRADOR" },
+    { key: "SUPERVISOR", label: "SUPERVISOR" },
+    { key: "MAESTRO", label: "MAESTRO NLP" },
+  ];
+  const status = [
+    { key: "ACTIVO", label: "ACTIVO" },
+    { key: "INACTIVO", label: "INACTIVO" },
+  ];
 
   function handleSupplierChange(event) {
     const selectedUserssValue = event.target.value;
@@ -54,13 +66,15 @@ const UserRegister = () => {
         firstName: "",
         lastName: "",
         role: "",
+        state:""
       });
     } else {
-      const selectedUserssData = suppliers.find(supplier => supplier.id === selectedUserssValue);
+      const selectedUserssData = Usuarios.find(usuario => usuario.id === selectedUserssValue);
       setFormData({
         firstName: selectedUserssData.firstName,
         lastName: selectedUserssData.lastName,
         role: selectedUserssData.role,
+        state: selectedUserssData.state
       });
     }
   }
@@ -84,29 +98,30 @@ const UserRegister = () => {
   const { user, logout, errors, setErrors } = useAuth();
 
   useEffect(() => {
-    const fetchSuppliers = async () => {
+    const fetchUsuarios = async () => {
       try {
-        const querySnapshot = await getDocs(supliersInfoRef);
+        const querySnapshot = await getDocs(UsuariosInfoRef);
 
-        const supplierData = [];
+        const usuariosData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          supplierData.push({
+          usuariosData.push({
             id: doc.id,
             name: data.displayName,
             firstName: data.firstName,
             lastName: data.lastName,
             role: data.role,
+            state:data.state
           });
         });
 
-        setSuppliers(supplierData);
+        setUsuarios(usuariosData);
       } catch (error) {
         console.error("Error fetching suppliers from Firestore:", error);
       }
     };
-    fetchSuppliers();
-  }, [supliersInfoRef]);
+    fetchUsuarios();
+  }, [UsuariosInfoRef]);
 
   useEffect(() => {
     if (!user) {
@@ -124,72 +139,93 @@ const UserRegister = () => {
     }
   };
 
+  const resetForm = () => {
+    // Al cerrar modal, limpia el formulario
+    setFormData({
+      firstName: "",
+      lastName: "",
+      role: "",
+      state:""
+    });
+    setselectedUserss(null);
+    setSelectKey(prevKey => prevKey + 1);
+    // Cerrar el modal
+    onClose();
+};
+
   // Función para guardar datos
   const handleSubmit2 = async () => {
-
     if (!guardando) {
       setGuardando(true);
-
+  
       const idDocumentos = selectedUserss;
-
+  
       // Verificar si los campos obligatorios están llenos
-      if (
-        !formData.firstName ||
-        !formData.lastName ||
-        !formData.role
-      ) {
+      if (!formData.firstName || !formData.lastName) {
         setFormValid(false);
         setErrorMessage("Por favor, complete todos los campos obligatorios.");
+        setGuardando(false); // Asegúrate de habilitar el botón de nuevo
         return; // No enviar el formulario si falta algún campo obligatorio
       }
+  
       try {
-        //id del usuario
-        const docRef = doc(supliersInfoRef, idDocumentos);
+        // id del usuario
+        const docRef = doc(UsuariosInfoRef, idDocumentos);
+        const docSnap = await getDoc(docRef); // Cambiado de getDocs a getDoc
+    
+        if (docSnap.exists()) {
+            const existingData = docSnap.data();
+    
+            // Si state o role están vacíos, usa los valores actuales de Firestore
+            const newData = {
+                firstName: formData.firstName.toUpperCase(),
+                lastName: formData.lastName.toUpperCase(),
+                role: formData.role || existingData.role, // Usar el valor existente si el campo está vacío
+                state: formData.state || existingData.state, // Usar el valor existente si el campo está vacío
+                displayName: `${formData.firstName.toUpperCase()} ${formData.lastName.toUpperCase()}`,
+            };
+    
+            const newUpData = {
+                action: "Se Modificó Rol de Usuario",
+                date: new Date(),
+                uid: user.uid,
+            };
+    
+            // Validar el rol del usuario antes de guardar los cambios
+            if (!user || user.role === 'MAESTRO') {
+                setErrorMessage("No tienes permisos para realizar esta acción.");
+                setGuardando(false);
+                return;
+            }
+    
+            await updateDoc(docRef, newData);
+            await addDoc(upReference, newUpData);
+    
+            setselectedUserss(null);
+            setSelectKey(prevKey => prevKey + 1);
+            setFormData({
+                firstName: "",
+                lastName: "",
+                role: "",
+                state: "", // Restablecer el campo state
+            });
+    
+            setFormValid(true);
+            setErrorMessage("");
 
-        const newData = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: formData.role,
-          displayName: `${formData.firstName.toUpperCase()} ${formData.lastName.toUpperCase()}`,
-        };
-
-        const newUpData = {
-          action: "Se Modifico Rol de Usuario",
-          date: new Date(),
-          uid: user.uid,
-        };
-
-        // Validar el rol del usuario antes de guardar los cambios
-        if (!user || user.role === 'OPERARIO') {
-          setErrorMessage("No tienes permisos para realizar esta acción.");
-          setGuardando(false);
-          return;
+        } else {
+            console.error("El documento no existe.");
         }
-
-        await updateDoc(docRef, newData);
-        await addDoc(upReference, newUpData);
-
-        setselectedUserss(null);
-        setSelectKey(prevKey => prevKey + 1);
-        setFormData({
-          firstName: "",
-          lastName: "",
-          role: "",
-        });
-      } catch (error) {
+    } catch (error) {
         console.error("Error al guardar los datos:", error);
-      } finally {
-        // Vuelve a habilitar el botón después del guardado (independientemente de si tuvo éxito o no)
-        setGuardando(false);
-      }
+        setErrorMessage("Error al guardar los datos.");
+    } finally {
+        setGuardando(false); // Asegúrate de habilitar el botón de nuevo
     }
-    // Reiniciar la validación y el mensaje de error
-    setFormValid(true);
-    setErrorMessage("");
+    
+    }
   };
-
-
-
+  
   const handleSubmit = async () => {
     if (firstName === "") {
       setErrors("El nombre no puede estar vacío");
@@ -272,7 +308,7 @@ const UserRegister = () => {
           <Modal
             size={size}
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={resetForm}
             className="flex flex-wrap gap-2 "
           >
             <ModalContent>
@@ -284,16 +320,17 @@ const UserRegister = () => {
                       <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-2">
 
                         <div className="sm:col-span-1">
-                        <label
+                          <label
                             className=" block text-sm font-medium leading-6 text-gray-900"
                           >
                             <p className="font-bold text-lg ">USUARIO</p>
                           </label>
-                          
+
                           <div className="mt-2 pr-4">
                             <Select
-                              key={selectKey} // Clave para forzar re-renderizado
-                              items={suppliers}
+                              isRequired
+                              key={selectKey} // Clave para forzar re-renderizado 
+                              items={Usuarios}
                               label="Actualizar a:"
                               placeholder="Selecciona un Usuario"
                               className="max-w-xs"
@@ -301,7 +338,7 @@ const UserRegister = () => {
 
                               onChange={handleSupplierChange}
                             >
-                              {suppliers.map((supplier) => (
+                              {Usuarios.map((supplier) => (
                                 <SelectItem key={supplier.id} textValue={supplier.name}>
                                   <div className="flex gap-2 items-center">
                                     <div className="flex flex-col">
@@ -359,15 +396,44 @@ const UserRegister = () => {
                             <p className="font-bold text-lg ">ROL</p>
                           </label>
                           <div className="mt-2 pr-4">
-                            <Input
+                            <Select
                               isRequired
-                              type="text"
-                              label="Tipo"
+                              label="Seleccione un Rol para Usuario"
+                              className="max-w-xs"
                               id="role"
+                              placeholder={formData.role}
                               value={formData.role}
                               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                            >
+                              {roles.map((rol) => (
+                                <SelectItem key={rol.key}>
+                                  {rol.label}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label
+                            className=" block text-sm font-medium leading-6 text-gray-900"
+                          >
+                            <p className="font-bold text-lg ">STATUS</p>
+                          </label>
+                          <div className="mt-2 pr-4">
+                            <Select
+                              label="Seleccione un Rol para Usuario"
                               className="max-w-xs"
-                            />
+                              id="state"
+                              placeholder={formData.state}
+                              value={formData.state}
+                              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                            >
+                              {status.map((stat) => (
+                                <SelectItem key={stat.key}>
+                                  {stat.label}
+                                </SelectItem>
+                              ))}
+                            </Select>
                           </div>
                         </div>
                       </div>

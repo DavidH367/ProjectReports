@@ -29,6 +29,7 @@ export default function App() {
   const router = useRouter();
   const { pathname } = router;
   const routeSplit = pathname.split("/")[1];
+  
   const handleLogout = async () => {
     localStorage.removeItem("user");
     const logoutUser = await logout();
@@ -58,14 +59,23 @@ export default function App() {
     return () => unsubscribe();
   }, [loadedUser, user]);
 
-  const menuItems = [
-    { text: "Inicio", url: "../" },
-    { text: "ESCUELA NLP", url: "/reportes" },
-    { text: "MINISTERIOS", url: "/purchasing" },
+  // Definimos los items del menú, separando los items restringidos
+  const restrictedItems = [
+    { text: "MINISTERIOS", url: "/ministry" },
     { text: "ACTUALIZACION DE MINISTERIOS", url: "/news" },
+  ];
+  
+  const commonItems = [
+    { text: "HOME", url: "../" },
+    { text: "ESCUELA NLP", url: "/nlpSchool" },
     { text: "REGISTRO DE EVENTOS", url: "/eventos" },
     { text: "USUARIOS", url: "/users" },
   ];
+
+  // Filtramos los items según el rol del usuario
+  const menuItems = localUser.role === "ADMINISTRADOR" || localUser.role === "SUPERVISOR"
+    ? [...restrictedItems, ...commonItems]
+    : commonItems;
 
   return (
     <Navbar isBordered>
@@ -75,59 +85,27 @@ export default function App() {
 
       <NavbarContent className="movil pr-3" justify="center">
         <NavbarBrand>
-          
           <Link color="foreground" href="../">
-            <Logo/>
-            
+            <Logo />
           </Link>
         </NavbarBrand>
-
       </NavbarContent>
 
       <NavbarContent className="hidden flexin g" justify="center">
         <NavbarBrand>
           <Link color="foreground" href="../" isBlock>
-            <Logo/>
-            
+            <Logo />
           </Link>
         </NavbarBrand>
-        <NavbarItem >
-          <Link href="/nlpSchool" color="foreground" aria-current="page" isBlock>
-          <p className="text-large">
-            ESCUELA NLP
-          </p>
-          </Link>
-        </NavbarItem>
-        <NavbarItem >
-          <Link href="/ministry" color="foreground" aria-current="page" isBlock>
-          <p className="text-large">
-            MINISTERIOS
-          </p>
-          </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/news" isBlock>
-            <p className="text-large">
-              NOTICIAS DE MINISTERIOS
-            </p>
-          </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/eventos" isBlock>
-            <p className="text-large">
-              R. EVENTOS  
-            </p>
-          </Link>
-        </NavbarItem>
         
-        <NavbarItem>
-          <Link color="foreground" href="/users" isBlock>
-            <p className="text-large">
-              USUARIOS
-            </p>
-          </Link>
-        </NavbarItem>
-        
+        {/* Renderizamos los items según el rol */}
+        {menuItems.map((item, index) => (
+          <NavbarItem key={index}>
+            <Link href={item.url} color="foreground" aria-current="page" isBlock>
+              <p className="text-large">{item.text}</p>
+            </Link>
+          </NavbarItem>
+        ))}
       </NavbarContent>
 
       <NavbarContent as="div" justify="end">
@@ -142,12 +120,13 @@ export default function App() {
               name={`${localUser.displayname}`}
             />
           </DropdownTrigger>
-          <DropdownMenu aria-label="Profile Actions" variant="flat" css={{ alignTtems: "center"}}>
+          <DropdownMenu aria-label="Profile Actions" variant="flat" css={{ alignTtems: "center" }}>
             <DropdownItem
               key="team_settings"
               className="h-14 gap-2"
               css={{ height: "fit-content", alignTtems: "center" }}
-              color="secondary">
+              color="secondary"
+            >
               {localUser && (
                 <>
                   <p className="font-bold">{`${localUser.displayname}` ?? "Usuario"}</p>
@@ -155,24 +134,17 @@ export default function App() {
                   <p className="font-semibold">{localUser.email}</p>
                 </>
               )}
-
             </DropdownItem>
-            <DropdownItem
-                withDivider
-                color="danger"
-                key="logout">
-                  <div style={{display: 'flex', justifyContent: 'center'}}>
-                    <Button
-                      onPress={handleLogout}
-                      color="danger">
-                        Cerrar Sesión
-                    </Button>
-                  </div>
-              </DropdownItem>
+            <DropdownItem withDivider color="danger" key="logout">
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button onPress={handleLogout} color="danger">
+                  Cerrar Sesión
+                </Button>
+              </div>
+            </DropdownItem>
           </DropdownMenu>
         </Dropdown>
       </NavbarContent>
-
 
       <NavbarMenu>
         {menuItems.map((item, index) => (
