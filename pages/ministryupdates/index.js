@@ -40,7 +40,6 @@ const UpdatesMinistriesComponent = () => {
       });
       setData(ministryNewsData);
       setFilteredData(ministryNewsData);
-      console.log(ministryNewsData); // Inicializa los datos filtrados con los datos originales
     };
     fetchMinistryUpdates();
   }, []);

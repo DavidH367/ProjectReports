@@ -15,7 +15,7 @@ import { useRouter } from "next/router";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import "react-datepicker/dist/react-datepicker.css";
 import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton } from "@nextui-org/react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio, Textarea } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio, Textarea, Divider } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
 
@@ -698,7 +698,7 @@ const TeachersNLPComponent = () => {
                                                         id="status"
                                                         value={status}
                                                         isRequired
-                                                        label="Status del Alumno"
+                                                        label="Status del Maestro"
                                                         className="text-sm"
                                                         onChange={(e) => setStatus(e.target.value)}
                                                     >
@@ -740,7 +740,7 @@ const TeachersNLPComponent = () => {
                                 <ModalContent>
                                     {() => (
                                         <>
-                                            <ModalHeader className="text-center flex flex-col gap-1">Informacion de Alumno</ModalHeader>
+                                            <ModalHeader className="text-center flex flex-col gap-1">Informacion de Maestro</ModalHeader>
                                             <ModalBody>
                                                 <div className="grid gap-1 grid-cols-1">
                                                     {errorMessage && (
@@ -753,7 +753,7 @@ const TeachersNLPComponent = () => {
                                                         <label
                                                             className=" block text-sm font-medium leading-6 text-gray-900"
                                                         >
-                                                            <p className="font-bold text-lg ">Actualizar Info Alumnos</p>
+                                                            <p className="font-bold text-lg ">Actualizar Info Maestros</p>
                                                             <p className="font-light text-tiny ">Selecciona para Actualizar ó Deseleccionar para Agregar:</p>
                                                         </label>
 
@@ -784,7 +784,7 @@ const TeachersNLPComponent = () => {
                                                     <label
                                                         className=" block text-sm font-medium leading-6 text-gray-900"
                                                     >
-                                                        <p className="font text-md p-4">Informacion Personal del Alumno </p>
+                                                        <p className="font text-md p-4">Informacion Personal del Maestro </p>
                                                     </label>
                                                     <Input
                                                         className="w-64"
@@ -902,7 +902,7 @@ const TeachersNLPComponent = () => {
                                                         id="status"
                                                         value={formData.status}
                                                         isRequired
-                                                        label="Status del Alumno"
+                                                        label="Status del Maestro"
                                                         className="text-sm"
                                                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
 
@@ -948,7 +948,7 @@ const TeachersNLPComponent = () => {
                                     )}
                                     <CardFooter className="absolute bg-white/30 bottom-0 border-t-0 border-zinc-100/50 z-10 grid justify-items-center text-center -p-1">
                                         <div>
-                                            <p className="text-black text-tiny"> Sponsor Code: N° {alumno.sponsor_code} </p>
+                                            <p className="text-black"> Area or Field:  {alumno.area} </p>
 
 
                                             <div className="grid grid-cols-1 justify-items-center">
@@ -1011,6 +1011,7 @@ const TeachersNLPComponent = () => {
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
                                         <p className="text-base font-bold">About</p>
                                         <p className="text-sm">{selectedTeacher.description}</p>
+                                        <Divider className="my-1" />
                                         <p className="text-sm">Tiene como objetivo: {selectedTeacher.project}</p>
                                     </div>
                                 </ModalBody>

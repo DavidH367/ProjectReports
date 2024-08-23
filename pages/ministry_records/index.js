@@ -82,7 +82,7 @@ const MinistryRecordsComponent = () => {
         mision: selectedMinistryData.mision,
         vision: selectedMinistryData.vision,
         leader: selectedMinistryData.leader,
-      Ministry: selectedMinistryData.budget,
+        budget: selectedMinistryData.budget,
       });
     }
   }
@@ -171,6 +171,18 @@ const MinistryRecordsComponent = () => {
 
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
+
+        setFormData({
+          category: "",
+          description: "",
+          ministry_name: "",
+          mision: "",
+          vision: "",
+          leader: "",
+          budget: "",
+        });
+        // Cerrar el modal
+        onClose();
 
       } catch (error) {
         console.error("Error al guardar los datos:", error);

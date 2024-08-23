@@ -136,9 +136,9 @@ const onNextPage = React.useCallback(() => {
 
                     if (column.field === 'budget') {
                       // Formatea la columna 'value' como moneda
-                      cellValue = parseFloat(row[column.field]).toLocaleString("es-ES", {
+                      cellValue = parseFloat(row[column.field]).toLocaleString("en-US", {
                         style: "currency",
-                        currency: "HNL",
+                        currency: "USD",
                         minimumFractionDigits: 2,
                     })
                     }

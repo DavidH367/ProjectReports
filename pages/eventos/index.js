@@ -20,7 +20,7 @@ import FilterSection from "../../Components/Form/FilterSectionGastos";
 import { startOfDay, endOfDay } from "date-fns";
 import { parse, isAfter, isBefore } from "date-fns";
 
-const InformeGastos = () => {
+const InformeEventos = () => {
   //inicio para el filtro de datos
   const [data, setData] = useState([]);
   const [combinedData, setCombinedData] = useState([]); 
@@ -84,6 +84,7 @@ const InformeGastos = () => {
   
       setData(combinedData);
       setCombinedData(combinedData);
+      console.log("Info: ",combinedData);
     };
   
     fetchEventos();
@@ -110,4 +111,4 @@ const InformeGastos = () => {
   );
 };
 
-export default InformeGastos;
+export default InformeEventos;

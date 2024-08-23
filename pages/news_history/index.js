@@ -7,6 +7,9 @@ import {
   collection,
   query,
   getDocs,
+  getDoc,
+  doc,
+  where
 } from "firebase/firestore";
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 import { useAuth } from "../../lib/context/AuthContext";
@@ -15,19 +18,20 @@ import "react-datepicker/dist/react-datepicker.css";
 import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-const updatesRef = collection(db, "updates");
+const updatesRef = collection(db, "news");
 const storage = getStorage();
 const ministriesInfoRef = collection(db, "ministries");
-const upReference = collection(db, "news");
+const upReference = collection(db, "updates");
 
 const MinistriesComponent = () => {
 
   const [ministries, setMinistries] = useState([]);
   const [selectedMinistry, setSelectedMinistry] = useState(null);
+  const [ministryName, setMinistryName] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dateup, setDateup] = useState(null);
-  const [reached, setReached] = useState("");
+  const [act_bugdet, setAct_Bugdet] = useState(0);
   const [zone, setZone] = useState("");
   const [archivo1, setArchivo1] = useState(null);
   const [archivo2, setArchivo2] = useState(null);
@@ -124,6 +128,29 @@ const MinistriesComponent = () => {
     return date;
   };
 
+  const getFullName = async () => {
+    try {
+        let idMinistry = selectedMinistry;
+
+        // Obtén la referencia al documento directamente usando el ID del documento
+        const docRef = doc(db, "ministries", idMinistry);
+        const docSnapshot = await getDoc(docRef);
+        let fullNameM = "";
+
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          fullNameM = data.ministry_name || ""; // Asigna el nombre del ministerio o una cadena vacía si no existe
+          console.log("Nombre del Ministerio:", fullNameM);
+      } else {
+          console.log("No existe un documento con ese ID.");
+      }
+        return fullNameM;
+    } catch (error) {
+        console.error("Error al obtener el nombre completo:", error);
+        return ""; // Retorna una cadena vacía en caso de error
+    }
+};
+
   //Funcion para guardar datos
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -132,7 +159,7 @@ const MinistriesComponent = () => {
       const idDocumentos = selectedMinistry;
 
       // Verificar si los campos obligatorios están llenos
-      if (!title || !description || !reached || !zone) {
+      if (!title || !description || !act_bugdet || !zone || !dateup) {
         setFormValid(false);
         setErrorMessage("Por favor, complete todos los campos obligatorios.");
         return; // No enviar el formulario si falta algún campo obligatorio
@@ -205,13 +232,19 @@ const MinistriesComponent = () => {
         }
         //id del ministerio
         const docId2 = idDocumentos;
+        
+        const fullMinistryName = await getFullName();
+        const newfullN = fullMinistryName;
+
+        //const minisName = selectedMinistry.ministry_name;
 
         const newUpdateData = {
           id: docId2,
+          minName: newfullN,
           new_title: title,
           description: description,
           date: calendarDateToUTC(dateup), // Guardar la fecha actual en Firebase
-          reached: parseFloat(reached),
+          act_bugdet: parseFloat(act_bugdet),
           zone: zone,
           images:{
             url1: url1,
@@ -235,11 +268,16 @@ const MinistriesComponent = () => {
         setTitle("");
         setDescription("");
         setDateup(null);
-        setReached("");
+        setAct_Bugdet("");
         setZone("");
         setArchivo1(null);
         setArchivo2(null);
         setArchivo3(null);
+
+        // Resetear el input de archivo
+        document.getElementById("url1").value = "";
+        document.getElementById("url2").value = "";
+        document.getElementById("url3").value = "";
 
       } catch (error) {
         console.error("Error al guardar los datos:", error);
@@ -289,11 +327,11 @@ const MinistriesComponent = () => {
                     value={selectedMinistry}
                     onChange={handleMinistryChange}
                   >
-                    {(user) => (
-                      <SelectItem key={user.id} textValue={user.name}>
+                    {(ministr) => (
+                      <SelectItem key={ministr.id} textValue={ministr.name}>
                         <div className="flex gap-2 items-center">
                           <div className="flex flex-col">
-                            <span className="text-small">{user.name}</span>
+                            <span className="text-small">{ministr.name}</span>
 
                           </div>
                         </div>
@@ -350,6 +388,7 @@ const MinistriesComponent = () => {
                 <div className="mt-2 pr-12">
                   <DatePicker
                     id="dateup"
+                    isRequired
                     label="Seleccione una Fecha"
                     variant="bordered"
                     showMonthAndYearPickers
@@ -369,16 +408,16 @@ const MinistriesComponent = () => {
                 <label
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <a className="font-bold text-lg">Personas Alcanzadas</a>
+                  <a className="font-bold text-lg">Presupuesto de Actividad</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
                     isRequired
                     type="number"
-                    label="# personas"
-                    id="reached"
-                    value={reached}
-                    onChange={(e) => setReached(e.target.value)}
+                    label="USD"
+                    id="act_bugdet"
+                    value={act_bugdet}
+                    onChange={(e) => setAct_Bugdet(e.target.value)}
                     className="max-w-xs"
                   />
                 </div>
