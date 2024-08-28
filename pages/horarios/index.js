@@ -1,5 +1,5 @@
 import Head from "next/head";
-import React, { useState, useEffect, useMemo  } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "firebase/firestore";
 import { db } from "../../lib/firebase";
 import {
@@ -18,7 +18,7 @@ import ReusableTable from "../../Components/Form/ReusableTable";
 import { columns } from "../../Data/control/datas";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Avatar, Chip, RadioGroup, Radio, Checkbox, Dropdown } from "@nextui-org/react";
 import "react-datepicker/dist/react-datepicker.css";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Switch } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 
 const upReference = collection(db, "updates");
@@ -71,6 +71,7 @@ const HorariosComponent = () => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [selectedDateRange, setSelectedDateRange] = useState({ start: '', end: '' });
     const [filteredAttendance, setFilteredAttendance] = useState([]);
+    const [isSelected, setIsSelected] = React.useState(true);
 
     const [filterValue, setFilterValue] = useState("");
     const [alumnosRep, setAlumnosRep] = useState([]);
@@ -80,6 +81,9 @@ const HorariosComponent = () => {
     const [selectedAlumnoRep, setSelectedalumnoRep] = useState(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [behavior, setBehavior] = useState("");
+    const [academic, setAcademic] = useState("");
+    const [pray, setPray] = useState("");
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
@@ -317,10 +321,8 @@ const HorariosComponent = () => {
             const idDocumentos = selectedAlumnoRep;
 
             // Verificar si los campos obligatorios están llenos
-            if (
-                !title ||
-                !description
-            ) {
+            if ((!isSelected && (!selectedAlumnoRep || !title || !description)) ||
+                (isSelected && (!selectedAlumnoRep || !behavior || !academic || !pray))) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
                 setFormValid(false);
                 setGuardando(false);
@@ -328,19 +330,37 @@ const HorariosComponent = () => {
             }
 
             try {
-
                 const fullN = await getFullName();
                 const newfullN = fullN;
 
-                const newData = {
+                let newData = {
                     idAlumno: idDocumentos,
                     nombreAlumno: `${formData.firstname} ${formData.lastname}`,
-                    title: title,
-                    description: description,
                     idIncharge: user.uid,
                     teacher: newfullN,
                     date: new Date(),
                 };
+    
+                if (isSelected) {
+                    // Si el Switch está en true, llenar solo los campos adicionales
+                    let type1 = "Report";
+                    newData = {
+                        ...newData,
+                        behavior: behavior,
+                        academic: academic,
+                        pray: pray,
+                        type: type1,
+                    };
+                } else {
+                    // Si el Switch está en false, llenar solo title y description
+                    let type2 = "Update";
+                    newData = {
+                        ...newData,
+                        title: title,
+                        description: description,
+                        type: type2,
+                    };
+                }
 
                 const newUpData2 = {
                     action: "Registra un Reporte de Alumno NLP",
@@ -438,6 +458,9 @@ const HorariosComponent = () => {
         setSelectKey(prevKey => prevKey + 1);
         setTitle("");
         setDescription("");
+        setBehavior("");
+        setAcademic("");
+        setPray("");
         setSelectedalumnoRep(null);
     };
 
@@ -493,7 +516,7 @@ const HorariosComponent = () => {
                     </div>
                     <Modal
                         backdrop="blur"
-                        size="md"
+                        size="2xl"
                         isOpen={isModOpen}
                         onClose={handleModalClose2}
                         scrollBehavior="inside"
@@ -517,24 +540,20 @@ const HorariosComponent = () => {
                                                 </div>
                                             )}
                                             <div className="sm:col-span-1">
-
-                                                <label
-                                                    className=" block text-sm font-medium leading-6 text-gray-900"
-                                                >
-                                                    <p className="font-bold text-lg ">Llamados de Atencion o Caso Especial</p>
-                                                    <p className="font-light text-tiny ">Selecciona un Alumno:</p>
+                                                <label className="block text-sm font-medium leading-6 text-gray-900">
+                                                    <p className="font-bold text-lg">Llamados de Atención o Caso Especial</p>
+                                                    <p className="font-light text-tiny">Selecciona un Alumno:</p>
                                                 </label>
 
                                                 <div className="mt-2 pr-4">
-
                                                     <Select
                                                         key={selectKey} // Clave para forzar re-renderizado
                                                         items={alumnosReports}
+                                                        isRequired
                                                         label="Actualizar a:"
                                                         placeholder="Selecciona un Alumno"
                                                         className="max-w-xs"
                                                         value={selectedAlumnoRep}
-
                                                         onChange={handleAlumnoRepChange}
                                                     >
                                                         {alumnosReports.map((supplier) => (
@@ -548,31 +567,69 @@ const HorariosComponent = () => {
                                                             </SelectItem>
                                                         ))}
                                                     </Select>
+                                                    <Switch
+                                                        className="font-bold text-default-500"
+                                                        isSelected={isSelected}
+                                                        onValueChange={setIsSelected}
+                                                    >
+                                                        Tipo: {isSelected ? "Actualización" : "Reporte"}
+                                                    </Switch>
                                                 </div>
                                             </div>
-                                            <label
-                                                className=" block text-sm font-medium leading-6 text-gray-900"
-                                            >
-                                                <p className="font text-md p-4">Informacion de Reporte </p>
+                                            <label className="block text-sm font-medium leading-6 text-gray-900">
+                                                <p className="font text-md p-4">Información de Reporte</p>
                                             </label>
-                                            <Input
-                                                className="w-64"
-                                                isRequired
-                                                label="Title"
-                                                id="title"
-                                                value={title}
-                                                onChange={(e) => setTitle(e.target.value)}
-                                            />
-                                            <Textarea
-                                                className="w-64"
-                                                isRequired
-                                                label="Description"
-                                                id="description"
-                                                value={description}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                            />
 
+                                            {/* Mostrar campos dependiendo del estado del Switch */}
+                                            {!isSelected ? (
+                                                <>
+                                                    <Input
+                                                        className="w-64"
+                                                        isRequired
+                                                        label="Title"
+                                                        id="title"
+                                                        value={title}
+                                                        onChange={(e) => setTitle(e.target.value)}
+                                                    />
+                                                    <Textarea
+                                                        className="w-64"
+                                                        isRequired
+                                                        label="Description"
+                                                        id="description"
+                                                        value={description}
+                                                        onChange={(e) => setDescription(e.target.value)}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Textarea
+                                                        className="w-64"
+                                                        isRequired
+                                                        label="Child Behavior:"
+                                                        id="behavior"
+                                                        value={behavior}
+                                                        onChange={(e) => setBehavior(e.target.value)}
+                                                    />
+                                                    <Textarea
+                                                        className="w-64"
+                                                        isRequired
+                                                        label="Academic Report:"
+                                                        id="academic"
+                                                        value={academic}
+                                                        onChange={(e) => setAcademic(e.target.value)}
+                                                    />
+                                                    <Textarea
+                                                        className="w-64"
+                                                        isRequired
+                                                        label="Prayer Request:"
+                                                        id="pray"
+                                                        value={pray}
+                                                        onChange={(e) => setPray(e.target.value)}
+                                                    />
+                                                </>
+                                            )}
                                         </div>
+
                                     </ModalBody>
                                     <ModalFooter>
                                         <Button color="danger" variant="light" onPress={handleModalClose2}>

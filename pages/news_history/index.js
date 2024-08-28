@@ -11,12 +11,13 @@ import {
   doc,
   where
 } from "firebase/firestore";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Checkbox } from "@nextui-org/react";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import "react-datepicker/dist/react-datepicker.css";
 import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { HeartIcon } from './HeartIcon.jsx';
 
 const updatesRef = collection(db, "news");
 const storage = getStorage();
@@ -37,6 +38,7 @@ const MinistriesComponent = () => {
   const [archivo2, setArchivo2] = useState(null);
   const [archivo3, setArchivo3] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
+  const [isSelected, setIsSelected] = React.useState(false);
 
   //estado para validar solo un guardado
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
@@ -130,26 +132,26 @@ const MinistriesComponent = () => {
 
   const getFullName = async () => {
     try {
-        let idMinistry = selectedMinistry;
+      let idMinistry = selectedMinistry;
 
-        // Obtén la referencia al documento directamente usando el ID del documento
-        const docRef = doc(db, "ministries", idMinistry);
-        const docSnapshot = await getDoc(docRef);
-        let fullNameM = "";
+      // Obtén la referencia al documento directamente usando el ID del documento
+      const docRef = doc(db, "ministries", idMinistry);
+      const docSnapshot = await getDoc(docRef);
+      let fullNameM = "";
 
-        if (docSnapshot.exists()) {
-          const data = docSnapshot.data();
-          fullNameM = data.ministry_name || ""; // Asigna el nombre del ministerio o una cadena vacía si no existe
-          console.log("Nombre del Ministerio:", fullNameM);
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        fullNameM = data.ministry_name || ""; // Asigna el nombre del ministerio o una cadena vacía si no existe
+        console.log("Nombre del Ministerio:", fullNameM);
       } else {
-          console.log("No existe un documento con ese ID.");
+        console.log("No existe un documento con ese ID.");
       }
-        return fullNameM;
+      return fullNameM;
     } catch (error) {
-        console.error("Error al obtener el nombre completo:", error);
-        return ""; // Retorna una cadena vacía en caso de error
+      console.error("Error al obtener el nombre completo:", error);
+      return ""; // Retorna una cadena vacía en caso de error
     }
-};
+  };
 
   //Funcion para guardar datos
   const handleSubmit = async (event) => {
@@ -232,7 +234,7 @@ const MinistriesComponent = () => {
         }
         //id del ministerio
         const docId2 = idDocumentos;
-        
+
         const fullMinistryName = await getFullName();
         const newfullN = fullMinistryName;
 
@@ -246,7 +248,8 @@ const MinistriesComponent = () => {
           date: calendarDateToUTC(dateup), // Guardar la fecha actual en Firebase
           act_bugdet: parseFloat(act_bugdet),
           zone: zone,
-          images:{
+          nextEvent: isSelected,
+          images: {
             url1: url1,
             url2: url2,
             url3: url3,
@@ -273,6 +276,7 @@ const MinistriesComponent = () => {
         setArchivo1(null);
         setArchivo2(null);
         setArchivo3(null);
+        setIsSelected(false);
 
         // Resetear el input de archivo
         document.getElementById("url1").value = "";
@@ -308,9 +312,12 @@ const MinistriesComponent = () => {
               AGREGAR NUEVA ACTIVIDAD COMPLETADA A PROYECTOS
             </p>
           </h2>
-          <p className="text-sm text-gray-600 mb-6">POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS</p>
+          <p className="text-sm text-gray-600 mb-2">POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS</p>
           <form onSubmit={handleSubmit} >
-            <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="flex gap-2 mt-2 mb-4">
+              <Checkbox className="font-bold" isSelected={isSelected} onValueChange={setIsSelected} defaultSelected icon={<HeartIcon />}>¿Es un Evento Próximo? {isSelected ? "SI" : "NO"}</Checkbox>
+            </div>
+            <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3 ">
               <div className="sm:col-span-1">
                 <label htmlFor="n_cheque" className="block text-sm font-medium leading-6 text-gray-900">
                   <a className='font-bold text-lg'>
@@ -447,6 +454,8 @@ const MinistriesComponent = () => {
 
 
             </div>
+
+            <Divider className="my-4" />
             <h2 className="text-lg font-semibold mb-2 ">
               <p className="text-center">DATOS GRAFICOS DE LOS PROYECTOS</p>
             </h2>
