@@ -297,7 +297,7 @@ const MinistriesComponent = () => {
     <div className="espacioU">
       <Head>
         <title>ACTUALIZACION DE PROYECTOS</title>
-        <meta name="description" content="DEPOSITO O VENTA DE CAFÉ" />
+        <meta name="description" content="ACTUALIZACION DE PROYECTOS" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/img/logo_paginas.png" />
       </Head>
