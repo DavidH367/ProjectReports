@@ -20,6 +20,7 @@ export default function App({ Component, pageProps }) {
       nProgress.done()
     })
     return (
+      
       <AuthContextProvider>
         <NextUIProvider>
           {loading ? (

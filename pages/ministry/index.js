@@ -39,9 +39,11 @@ const MinistryComponent = () => {
   return (
     <div className={"homeSearches"}>
       <Head>
+      <html lang="es" />
         <title>PROYECTOS MEBN</title>
         <meta name="description" content="PROYECTOS MEBN" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charSet="utf-8" />
         <link rel="icon" href="/img/logo_paginas.png" />
       </Head>
       <h2 className="text-lg font-semibold mb-2 p-4 text-center">PROYECTOS EN MINISTERIO BENDICIÓN A LAS NACIONES</h2>

@@ -29,7 +29,7 @@ const NewMinistryComponent = () => {
   const [start_year, setStart_year] = useState(null);
   const [archivo, setArchivo] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
-  
+
   const categories = [
     { key: "Education", label: "Education" },
     { key: "Health", label: "Health" },
@@ -161,6 +161,7 @@ const NewMinistryComponent = () => {
   };
 
   return (
+    
     <div className="espacio">
       <Head>
         <title>NUEVO MINISTERIO</title>
@@ -180,17 +181,17 @@ const NewMinistryComponent = () => {
             <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="sm:col-span-1">
                 <label
-                  className=" block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="category" className=" block text-sm font-medium leading-6 text-gray-900"
                 >
                   <p className="font-bold text-lg ">CATEGORIA</p>
                 </label>
                 <div className="mt-2 pr-4">
                   <Select
+                    id="category"
                     key={selectKey} // Clave para forzar re-renderizado
                     label="Select a category"
                     className="max-w-xs"
                     isRequired
-                    id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                   >
@@ -208,17 +209,17 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Descripcion"
+                  htmlFor="description"
                   className=" block text-sm font-medium leading-6 text-gray-900"
                 >
                   <p className="font-bold text-lg">DESCRIPCION</p>
                 </label>
                 <div className="mt-2 pr-4">
                   <Textarea
+                    id="description"
                     isRequired
                     type="text"
                     label="Descript."
-                    id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="max-w-xs"
@@ -229,17 +230,17 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Name"
+                  htmlFor="ministry_name"
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
                   <a className="font-bold text-lg">Nombre de Proyecto</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
+                    id="ministry_name"
                     isRequired
                     type="text"
                     label="Ej: New Life Project"
-                    id="ministry_name"
                     autoComplete="Name"
                     value={ministry_name}
                     onChange={(e) => setMinistry_name(e.target.value)}
@@ -250,15 +251,15 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Mision"
+                  htmlFor="mision"
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
                   <a className="font-bold text-lg">MISION</a>
                 </label>
                 <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                   <Textarea
-                    isRequired
                     id="mision"
+                    isRequired
                     placeholder="Ej. "
                     autoComplete="mision"
                     className="max-w-xs"
@@ -272,15 +273,15 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
+                  htmlFor="vision"
                   className="block text-sm font-medium leading-6 text-gray-900"
-                  htmlFor="Vision"
                 >
                   <a className="font-bold text-lg">VISION</a>
                 </label>
                 <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4 mt-2 pr-4">
                   <Textarea
-                    isRequired
                     id="vision"
+                    isRequired
                     placeholder="Ej. "
                     autoComplete="vision"
                     className="max-w-xs"
@@ -293,8 +294,9 @@ const NewMinistryComponent = () => {
               </div>
 
               <div className="sm:col-span-1 ">
-                <label 
-                className="block text-sm font-medium leading-6 text-gray-900">
+                <label
+                  htmlFor="start_year"
+                  className="block text-sm font-medium leading-6 text-gray-900">
                   <a className="font-bold text-lg">Fecha de Inicio</a>
                 </label>
                 <div className="mt-2 pr-32">
@@ -316,17 +318,17 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Name"
+                  htmlFor="leader"
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
                   <a className="font-bold text-lg">Encargado / Lider</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
+                    id="leader"
                     isRequired
                     type="text"
                     label="Ej: Daniel H"
-                    id="leader"
                     autoComplete="Name"
                     value={leader}
                     onChange={(e) => setLeader(e.target.value)}
@@ -337,17 +339,17 @@ const NewMinistryComponent = () => {
 
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="Name"
+                  htmlFor="budget"
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
                   <a className="font-bold text-lg">Presupuesto</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
+                    id="budget"
                     isRequired
                     type="number"
                     label="L"
-                    id="budget"
                     autoComplete="Presupuesto"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
@@ -367,15 +369,15 @@ const NewMinistryComponent = () => {
             <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="sm:col-span-1">
                 <label
-                  htmlFor="precio"
+                  htmlFor="logo"
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
                   <a className="font-bold text-lg">LOGO</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <input
-                    type="file"
                     id="logo"
+                    type="file"
                     onChange={handleChange}
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
                   />
