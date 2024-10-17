@@ -14,9 +14,9 @@ import {
   Chip,
   User,
 } from "@nextui-org/react";
-import { EditIcon } from "../../pages/sponsors/EditIcon";
-import { DeleteIcon } from "../../pages/sponsors/DeleteIcon";
-import { EyeIcon } from "../../pages/sponsors/EyeIcon";
+import { EditIcon } from "../Icons/EditIcon";
+import { DeleteIcon } from "../Icons/DeleteIcon";
+import { EyeIcon } from "../Icons/EyeIcon";
 import React, { useState, useEffect } from 'react';
 import { Pagination, PaginationItem, PaginationCursor } from "@nextui-org/react";
 import { useAsyncList } from "@react-stately/data";

@@ -1,5 +1,5 @@
 import React from "react";
-export default EditIcon = (props) => (
+export const EditIcon = (props) => (
   <svg
     aria-hidden="true"
     fill="none"

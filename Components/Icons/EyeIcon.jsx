@@ -1,5 +1,5 @@
 import React from "react";
-export default EyeIcon = (props) => (
+export const EyeIcon = (props) => (
   <svg
     aria-hidden="true"
     fill="none"
