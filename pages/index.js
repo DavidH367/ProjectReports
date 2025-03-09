@@ -3,24 +3,16 @@ import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { doc, onSnapshot } from "@firebase/firestore";
 import { useAuth } from "../lib/context/AuthContext";
-import { useRouter } from "next/router";
 import { Divider } from "@nextui-org/react";
 import { Image } from "@nextui-org/react";
+import withAuth from "../lib/hoc/withAuth";
 
-export default function Home() {
-  const { user, setErrors } = useAuth();
+function Home() {
+  const { user } = useAuth();
   const [localUser, setLocalUser] = useState({});
   const [loadedUser, setLoadedUser] = useState(false);
-  const router = useRouter();
+
   useEffect(() => {
-    //entrar a la pagina
-    if (!user) {
-      setErrors("");
-      router.push("/auth/Login");
-    } else if (user.first_login) {
-      router.push("/auth/ResetPassword");
-    }
-    //get rest of user information
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const unsubscribe = onSnapshot(userRef, (doc) => {
@@ -31,13 +23,13 @@ export default function Home() {
           firstLogin: updatedUser.first_login,
         };
         localStorage.setItem("user", JSON.stringify(newUser));
-        //saving user data in local storage
         setLocalUser(newUser);
         setLoadedUser(true);
       }
     });
     return () => unsubscribe();
-  }, [loadedUser, router, setErrors, user]);
+  }, [loadedUser, user]);
+
   return (
     <>
       <div className={"homeContainer"}>
@@ -54,19 +46,9 @@ export default function Home() {
         <div className="flex justify-center items-center">
           <Image
             isBlurred
-            height={400}
-            width={440}
+            height={500}
+            width={540}
             src="/img/NEW_MEBN_LOGO.png"
-            alt="LogoImages"
-            className="m-5"
-          />
-        </div>
-        <div className="flex justify-center items-center">
-        <Image
-            isBlurred
-            height="auto"
-            width={440}
-            src="/img/LOGO_letras_deg.png"
             alt="LogoImages"
             className="m-5"
           />
@@ -75,3 +57,5 @@ export default function Home() {
     </>
   );
 }
+
+export default withAuth(Home);

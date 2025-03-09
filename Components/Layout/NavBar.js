@@ -34,10 +34,31 @@ export default function App() {
     localStorage.removeItem("user");
     const logoutUser = await logout();
     if (logoutUser) {
+      // Redireccionamiento seguro a una URL fija
       router.push("/auth/Login");
       return;
     }
   };
+
+  // Función para validar URLs
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Ejemplo de redireccionamiento basado en entrada del usuario
+  const redirectToUrl = (url) => {
+    if (isValidUrl(url)) {
+      router.push(url);
+    } else {
+      console.error("Invalid URL");
+    }
+  };
+
   useEffect(() => {
     //get rest of user information
     if (!user) return;
@@ -91,7 +112,7 @@ export default function App() {
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden flexin g" justify="center">
+      <NavbarContent className="flexin" justify="center">
         <NavbarBrand>
           <Link color="foreground" href="../" isBlock>
             <Logo />

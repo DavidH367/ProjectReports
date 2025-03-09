@@ -44,6 +44,16 @@
     display: none;
   }
 }
+
+@media (max-width: 767px) {
+  .flexin {
+    display: none;
+  }
+  .movil {
+    display: flex;
+  }
+}
+
 .g {
   gap: 1rem;
 }
