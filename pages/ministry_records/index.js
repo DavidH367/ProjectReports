@@ -11,16 +11,20 @@ import {
   doc,
   onSnapshot
 } from "firebase/firestore";
+import firebase from "firebase/app";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import ReusableTable from "../../Components/Form/ReusableTable";
 import { columns } from "../../Data/ministry_records/data";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Progress } from "@nextui-org/react";
 import "react-datepicker/dist/react-datepicker.css";
+import imageCompression from 'browser-image-compression';
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
 
 const supliersInfoRef = collection(db, "ministries");
 const upReference = collection(db, "updates");
+const storage = getStorage();
 
 const MinistryRecordsComponent = () => {
   //Valida acceso a la pagina
@@ -33,7 +37,7 @@ const MinistryRecordsComponent = () => {
     }
   }, []);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [size, setSize] = React.useState('md')
+  const [size, setSize] = React.useState('full')
   const sizes = ["5xl"];
   const [formValid, setFormValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -41,6 +45,9 @@ const MinistryRecordsComponent = () => {
   const [filterValue, setFilterValue] = useState("");
   const [ministries, setMinistries] = useState([]);
   const [filteredMinistries, setFilteredMinistries] = useState([]);
+  const [logoFile, setLogoFile] = useState(null); // Estado para almacenar el archivo del logo
+  const [currentLogoUrl, setCurrentLogoUrl] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [ministry, setMinistry] = useState([]);
   const [selectedMinistry, setSelectedMinistry] = useState(null);
@@ -57,50 +64,51 @@ const MinistryRecordsComponent = () => {
   //estado para formulario
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
 
-  function handleSupplierChange(event) {
-    const selectedMinistryValue = event.target.value;
-    // Actualiza el estado con el nuevo valor seleccionado
-    setSelectedMinistry(selectedMinistryValue);
-    console.log("Seleccionado: ", selectedMinistryValue);
-    if (!selectedMinistryValue) {
-      // Si no hay valor seleccionado, limpia el formulario
-      setFormData({
-        category: "",
-        description: "",
-        ministry_name: "",
-        mision: "",
-        vision: "",
-        leader: "",
-        budget: "",
-      });
+  const handleLogoChange = async (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic')) {
+      try {
+        const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1024 });
+        setLogoFile(compressedFile);
+      } catch (error) {
+        console.error('Error al comprimir la imagen:', error);
+      }
+    } else if (file && file.name.toLowerCase().endsWith('.heic')) {
+      alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+      setLogoFile(null);
+      event.target.value = ""; // Restablecer el valor del input de archivo
     } else {
-      const selectedMinistryData = ministry.find(supplier => supplier.id === selectedMinistryValue);
-      setFormData({
-        category: selectedMinistryData.category,
-        description: selectedMinistryData.description,
-        ministry_name: selectedMinistryData.ministry_name,
-        mision: selectedMinistryData.mision,
-        vision: selectedMinistryData.vision,
-        leader: selectedMinistryData.leader,
-        budget: selectedMinistryData.budget,
-      });
-    }
-  }
-  const handleModalClose = () => {
-    // Si no hay valor seleccionado, limpia el formulario
-    setFormData({
-      category: "",
-      description: "",
-      ministry_name: "",
-      mision: "",
-      vision: "",
-      leader: "",
-      budget: "",
-    });
-    // Cerrar el modal
-    onClose();
-};
 
+      setLogoFile(null);
+      event.target.value = ""; // Restablecer el valor del input de archivo
+    }
+  };
+
+  const uploadLogo = async (file) => {
+    const storageRef = ref(storage, `imagenes/imagenes/logos/${file.name}`); // Crea una referencia al archivo
+    const uploadTask = uploadBytesResumable(storageRef, file); // Sube el archivo
+  
+    return new Promise((resolve, reject) => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          // Calcula el progreso de la carga
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress); // Actualiza el estado con el progreso
+        },
+        (error) => {
+          console.error("Error al subir el archivo:", error);
+          reject(error); // Maneja errores
+        },
+        async () => {
+          // Obtén la URL de descarga cuando la carga termine
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setUploadProgress(0); // Reinicia el progreso después de completar
+          resolve(downloadURL);
+        }
+      );
+    });
+  };
   useEffect(() => {
     const fetchMinistries = async () => {
       try {
@@ -119,6 +127,7 @@ const MinistryRecordsComponent = () => {
             vision: data.vision,
             leader: data.leader,
             budget: data.budget,
+            logo: data.logo_url || null, // Asegúrate de incluir el campo logo
           });
         });
 
@@ -129,6 +138,56 @@ const MinistryRecordsComponent = () => {
     };
     fetchMinistries();
   }, []);
+  function handleSupplierChange(event) {
+    const selectedMinistryValue = event.target.value;
+    // Actualiza el estado con el nuevo valor seleccionado
+    setSelectedMinistry(selectedMinistryValue);
+
+    if (!selectedMinistryValue) {
+      // Si no hay valor seleccionado, limpia el formulario
+      setFormData({
+        category: "",
+        description: "",
+        ministry_name: "",
+        mision: "",
+        vision: "",
+        leader: "",
+        budget: "",
+      });
+      setCurrentLogoUrl(null); // Limpiar la URL del logo
+    } else {
+      const selectedMinistryData = ministry.find(supplier => supplier.id === selectedMinistryValue);
+      if (selectedMinistryData) {
+        setFormData({
+          category: selectedMinistryData.category,
+          description: selectedMinistryData.description,
+          ministry_name: selectedMinistryData.ministry_name,
+          mision: selectedMinistryData.mision,
+          vision: selectedMinistryData.vision,
+          leader: selectedMinistryData.leader,
+          budget: selectedMinistryData.budget,
+        });
+        setCurrentLogoUrl(selectedMinistryData.logo || null); // Actualiza la URL del logo
+      }
+    }
+  }
+  const handleModalClose = () => {
+    // Si no hay valor seleccionado, limpia el formulario
+    setFormData({
+      category: "",
+      description: "",
+      ministry_name: "",
+      mision: "",
+      vision: "",
+      leader: "",
+      budget: "",
+    });
+    setCurrentLogoUrl(null); // Limpiar la URL del logo
+    // Cerrar el modal
+    onClose();
+  };
+
+  
 
   // Función para guardar datos
   const handleSubmit = async () => {
@@ -151,6 +210,11 @@ const MinistryRecordsComponent = () => {
         return; // No enviar el formulario si falta algún campo obligatorio
       }
       try {
+        let logoUrl = null;
+        if (logoFile) {
+          logoUrl = await uploadLogo(logoFile); // Subir el logo si se seleccionó uno
+        }
+
         //id del ministerio
         const docRef = doc(supliersInfoRef, idDocumentos);
         const newData = {
@@ -161,6 +225,7 @@ const MinistryRecordsComponent = () => {
           vision: formData.vision,
           leader: formData.leader,
           budget: parseFloat(formData.budget),
+          ...(logoUrl && { logo_url: logoUrl }), // Agregar la URL del logo si existe
         };
 
         const newUpData = {
@@ -172,6 +237,17 @@ const MinistryRecordsComponent = () => {
         await updateDoc(docRef, newData);
         await addDoc(upReference, newUpData);
 
+        // Actualiza el estado local para reflejar los cambios
+        setMinistry((prevMinistries) =>
+          prevMinistries.map((ministry) =>
+            ministry.id === idDocumentos
+              ? { ...ministry, ...newData }
+              : ministry
+          )
+        );
+        // Forzar la actualización del modal
+        handleSupplierChange({ target: { value: idDocumentos } });
+
         setFormData({
           category: "",
           description: "",
@@ -181,6 +257,8 @@ const MinistryRecordsComponent = () => {
           leader: "",
           budget: "",
         });
+        setLogoFile(null); // Reiniciar el estado del logo
+        setCurrentLogoUrl(null); // Limpiar la URL del logo
         // Cerrar el modal
         onClose();
 
@@ -257,7 +335,7 @@ const MinistryRecordsComponent = () => {
             />
           </div>
           <Modal
-            size={size}
+            size={"full"}
             isOpen={isOpen}
             onClose={handleModalClose}
           >
@@ -443,6 +521,37 @@ const MinistryRecordsComponent = () => {
                             />
                           </div>
                         </div>
+
+                        <div className="sm:col-span-1">
+                          <label
+                            htmlFor="logo"
+                            className="block text-sm font-medium leading-6 text-gray-900"
+                          >
+                            <a className="font-bold text-lg">Logo del Ministerio</a>
+                          </label>
+                          <div className="mt-2 pr-4">
+                            {currentLogoUrl && (
+                              <div className="mb-4">
+                                <p className="text-sm text-gray-600">Vista previa del logo actual:</p>
+                                <img
+                                  src={currentLogoUrl}
+                                  alt="Logo del Ministerio"
+                                  className="w-32 h-32 object-contain border rounded"
+                                />
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              id="logo"
+                              accept="image/*"
+                              onChange={handleLogoChange}
+                              className="max-w-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-center p-4">
+                        <Progress aria-label="Loading..." size="sm" value={uploadProgress} />
                       </div>
 
                     </form>

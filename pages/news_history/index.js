@@ -11,12 +11,14 @@ import {
   doc,
   where
 } from "firebase/firestore";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress } from "@nextui-org/react";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import "react-datepicker/dist/react-datepicker.css";
 import { parseZonedDateTime, parseAbsoluteToLocal } from "@internationalized/date";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import imageCompression from 'browser-image-compression';
+
 
 const updatesRef = collection(db, "news");
 const storage = getStorage();
@@ -36,7 +38,12 @@ const MinistriesComponent = () => {
   const [archivo1, setArchivo1] = useState(null);
   const [archivo2, setArchivo2] = useState(null);
   const [archivo3, setArchivo3] = useState(null);
+  const [preview1, setPreview1] = useState(null);
+  const [preview2, setPreview2] = useState(null);
+  const [preview3, setPreview3] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
+  const [progressTotal, setProgressTotal] = useState(0); // Progreso total
+
 
   //estado para validar solo un guardado
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
@@ -59,23 +66,63 @@ const MinistriesComponent = () => {
     }
   }, []);
 
-  const handleChange1 = (event) => {
-    const archivo1 = event.target.files[0];
-    console.log("Archivo seleccionado:", archivo1);
-    setArchivo1(archivo1);
+  // Función para manejar la compresión
+  const handleFileChange = async (event, setArchivo, setPreview) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic')) {
+        try {
+          // Opciones de compresión
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          };
+          const compressedFile = await imageCompression(file, options);
+          setArchivo(compressedFile);
+  
+          // Generar vista previa
+          const previewURL = URL.createObjectURL(compressedFile);
+          setPreview(previewURL);
+        } catch (error) {
+          console.error("Error al comprimir la imagen:", error);
+        }
+      } else if (file.name.toLowerCase().endsWith('.heic')) {
+        alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+        setArchivo(null);
+        setPreview(null);
+        event.target.value = ""; // Restablecer el valor del input de archivo
+      } else {
+        setArchivo(null);
+        setPreview(null);
+        event.target.value = ""; // Restablecer el valor del input de archivo
+      }
+    }
   };
 
-  const handleChange2 = (event) => {
-    const archivo2 = event.target.files[0];
-    console.log("Archivo seleccionado:", archivo2);
-    setArchivo2(archivo2);
+  // Función para subir archivos con progreso
+  const uploadFile = (file, updateProgress) => {
+    return new Promise((resolve, reject) => {
+      const archivoRef = ref(storage, `imagenes/imagenes/noticias/${file.name}`);
+      const uploadTask = uploadBytesResumable(archivoRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          updateProgress(progress); // Actualizar progreso individual
+        },
+        (error) => {
+          reject(error);
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
+    });
   };
 
-  const handleChange3 = (event) => {
-    const archivo3 = event.target.files[0];
-    console.log("Archivo seleccionado:", archivo3);
-    setArchivo3(archivo3);
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -130,34 +177,38 @@ const MinistriesComponent = () => {
 
   const getFullName = async () => {
     try {
-        let idMinistry = selectedMinistry;
+      let idMinistry = selectedMinistry;
 
-        // Obtén la referencia al documento directamente usando el ID del documento
-        const docRef = doc(db, "ministries", idMinistry);
-        const docSnapshot = await getDoc(docRef);
-        let fullNameM = "";
+      // Obtén la referencia al documento directamente usando el ID del documento
+      const docRef = doc(db, "ministries", idMinistry);
+      const docSnapshot = await getDoc(docRef);
+      let fullNameM = "";
 
-        if (docSnapshot.exists()) {
-          const data = docSnapshot.data();
-          fullNameM = data.ministry_name || ""; // Asigna el nombre del ministerio o una cadena vacía si no existe
-          console.log("Nombre del Ministerio:", fullNameM);
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        fullNameM = data.ministry_name || ""; // Asigna el nombre del ministerio o una cadena vacía si no existe
+        console.log("Nombre del Ministerio:", fullNameM);
       } else {
-          console.log("No existe un documento con ese ID.");
+        console.log("No existe un documento con ese ID.");
       }
-        return fullNameM;
+      return fullNameM;
     } catch (error) {
-        console.error("Error al obtener el nombre completo:", error);
-        return ""; // Retorna una cadena vacía en caso de error
+      console.error("Error al obtener el nombre completo:", error);
+      return ""; // Retorna una cadena vacía en caso de error
     }
-};
+  };
 
   //Funcion para guardar datos
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!guardando) {
       setGuardando(true);
+      let progress1 = 0, progress2 = 0, progress3 = 0;
       const idDocumentos = selectedMinistry;
-
+      const updateTotalProgress = () => {
+        const totalProgress = (progress1 + progress2 + progress3) / 3;
+        setProgressTotal(totalProgress);
+      };
       // Verificar si los campos obligatorios están llenos
       if (!title || !description || !act_bugdet || !zone || !dateup) {
         setFormValid(false);
@@ -167,72 +218,31 @@ const MinistriesComponent = () => {
 
       try {
 
-        let url1 = "";
-        let url2 = "";
-        let url3 = "";
-        if (archivo1) {
-          const archivoRef = ref(storage, `imagenes/imagenes/noticias/${archivo1.name}`);
-          const uploadTask = uploadBytesResumable(archivoRef, archivo1);
 
-          url1 = await new Promise((resolve, reject) => {
-            uploadTask.on(
-              "state_changed",
-              (snapshot) => {
-                // Progress function ...
-              },
-              (error) => {
-                reject(error);
-              },
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
-              }
-            );
+        let url1 = "", url2 = "", url3 = "";
+
+        if (archivo1) {
+          url1 = await uploadFile(archivo1, (progress) => {
+            progress1 = progress;
+            updateTotalProgress();
           });
         }
         if (archivo2) {
-          const archivoRef = ref(storage, `imagenes/imagenes/noticias/${archivo2.name}`);
-          const uploadTask = uploadBytesResumable(archivoRef, archivo2);
-
-          url2 = await new Promise((resolve, reject) => {
-            uploadTask.on(
-              "state_changed",
-              (snapshot) => {
-                // Progress function ...
-              },
-              (error) => {
-                reject(error);
-              },
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
-              }
-            );
+          url2 = await uploadFile(archivo2, (progress) => {
+            progress2 = progress;
+            updateTotalProgress();
           });
         }
         if (archivo3) {
-          const archivoRef = ref(storage, `imagenes/imagenes/noticias/${archivo3.name}`);
-          const uploadTask = uploadBytesResumable(archivoRef, archivo3);
-
-          url3 = await new Promise((resolve, reject) => {
-            uploadTask.on(
-              "state_changed",
-              (snapshot) => {
-                // Progress function ...
-              },
-              (error) => {
-                reject(error);
-              },
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
-              }
-            );
+          url3 = await uploadFile(archivo3, (progress) => {
+            progress3 = progress;
+            updateTotalProgress();
           });
         }
+
         //id del ministerio
         const docId2 = idDocumentos;
-        
+
         const fullMinistryName = await getFullName();
         const newfullN = fullMinistryName;
 
@@ -246,7 +256,7 @@ const MinistriesComponent = () => {
           date: calendarDateToUTC(dateup), // Guardar la fecha actual en Firebase
           act_bugdet: parseFloat(act_bugdet),
           zone: zone,
-          images:{
+          images: {
             url1: url1,
             url2: url2,
             url3: url3,
@@ -278,6 +288,12 @@ const MinistriesComponent = () => {
         document.getElementById("url1").value = "";
         document.getElementById("url2").value = "";
         document.getElementById("url3").value = "";
+
+        // Reiniciar vistas previas y barra de progreso
+        setPreview1(null);
+        setPreview2(null);
+        setPreview3(null);
+        setProgressTotal(0);
 
       } catch (error) {
         console.error("Error al guardar los datos:", error);
@@ -465,28 +481,35 @@ const MinistriesComponent = () => {
                   <input
                     type="file"
                     id="url1"
-                    onChange={handleChange1}
+                    accept="image/*"
+                    onChange={(event) => handleFileChange(event, setArchivo1, setPreview1)}
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
                   />
+                  {preview1 && <img src={preview1} alt="Vista previa 1" width="100" />}
                 </div>
                 <div className="mt-2 pr-4">
                   <input
                     type="file"
                     id="url2"
-                    onChange={handleChange2}
+                    accept="image/*"
+                    onChange={(event) => handleFileChange(event, setArchivo2, setPreview2)}
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
                   />
+                  {preview2 && <img src={preview2} alt="Vista previa 2" width="100" />}
                 </div>
                 <div className="mt-2 pr-4">
                   <input
                     type="file"
                     id="url3"
-                    onChange={handleChange3}
+                    accept="image/*"
+                    onChange={(event) => handleFileChange(event, setArchivo3, setPreview3)}
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
                   />
+                  {preview3 && <img src={preview3} alt="Vista previa 3" width="100" />}
                 </div>
               </div>
-
+              {/* Componente de progreso único */}
+              <Progress value={progressTotal} max={100} />
               <button
                 onSubmit={handleSubmit}
                 type="submit"

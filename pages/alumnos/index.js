@@ -42,6 +42,7 @@ const Alumnosnlp = () => {
     const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
     const [formValid, setFormValid] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+    const [previewImage, setPreviewImage] = useState(null); // Vista previa de la imagen
 
     const statusColorMap = {
         Activo: "success",
@@ -253,8 +254,18 @@ const Alumnosnlp = () => {
     const handleChange = (event) => {
         const archivo = event.target.files[0];
         setArchivo(archivo);
-    };
 
+        // Generar una vista previa de la imagen
+        if (archivo) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setPreviewImage(reader.result); // Guardar la URL de la vista previa
+            };
+            reader.readAsDataURL(archivo);
+        } else {
+            setPreviewImage(null); // Limpiar la vista previa si no hay archivo
+        }
+    };
     // Función para convertir CalendarDate a Date
     const calendarDateToUTC = (calendarDate) => {
         const date = new Date(Date.UTC(calendarDate.year, calendarDate.month - 1, calendarDate.day));
@@ -352,12 +363,8 @@ const Alumnosnlp = () => {
                     logoUrl = await new Promise((resolve, reject) => {
                         uploadTask.on(
                             "state_changed",
-                            (snapshot) => {
-                                // Progress function ...
-                            },
-                            (error) => {
-                                reject(error);
-                            },
+                            (snapshot) => { },
+                            (error) => reject(error),
                             async () => {
                                 const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                                 resolve(downloadURL);
@@ -392,6 +399,12 @@ const Alumnosnlp = () => {
                 // Crear un nuevo documento
                 await addDoc(nlpSchoolReference, newData);
                 await addDoc(upReference, newUpData);
+
+                // Actualizar el estado de alumnosnlp con el nuevo alumno
+                setAlumnosNLP((prevAlumnos) => [
+                    ...prevAlumnos,
+                    { id: nlpSchoolReference.id, ...newData },
+                ]);
 
                 setSelectKey(prevKey => prevKey + 1);
                 setSelectKey2(prevKey => prevKey + 1);
@@ -477,6 +490,7 @@ const Alumnosnlp = () => {
                     siblings: parseFloat(formData.siblings),
                     co_siblings: parseFloat(formData.co_siblings),
                     status: formData.status,
+                    imageurl: logoUrl, // Actualizar la URL de la imagen
                 };
 
                 // Solo actualizar el campo 'imageurl' si se ha subido una nueva imagen
@@ -696,6 +710,16 @@ const Alumnosnlp = () => {
                                                                 onChange={handleChange}
                                                                 className="w-64 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
                                                             />
+                                                            {previewImage && (
+                                                                <div className="mt-4">
+                                                                    <img
+                                                                        src={previewImage}
+                                                                        alt="Vista previa"
+                                                                        className="w-32 h-32 object-cover rounded-md cursor-pointer"
+                                                                        onClick={() => window.open(previewImage, "_blank")} // Abrir en una nueva pestaña
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -847,6 +871,40 @@ const Alumnosnlp = () => {
                                                     >
                                                         <p className="font text-md p-4">Informacion Personal del Alumno </p>
                                                     </label>
+                                                    <div className="sm:col-span-1 py-4">
+                                                        <label className="block text-sm leading-6 text-gray-900">
+                                                            <a className="text-sm font-medium">Fotografía</a>
+                                                        </label>
+                                                        <div className="mt-2 pr-4">
+                                                            <input
+                                                                type="file"
+                                                                id="logo"
+                                                                onChange={handleChange}
+                                                                className="w-64 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
+                                                            />
+                                                            {previewImage ? (
+                                                                <div className="mt-4">
+                                                                    <img
+                                                                        src={previewImage}
+                                                                        alt="Vista previa"
+                                                                        className="w-32 h-32 object-cover rounded-md cursor-pointer"
+                                                                        onClick={() => window.open(previewImage, "_blank")} // Abrir en una nueva pestaña
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                formData.imageurl && (
+                                                                    <div className="mt-4">
+                                                                        <img
+                                                                            src={formData.imageurl}
+                                                                            alt="Imagen actual"
+                                                                            className="w-32 h-32 object-cover rounded-md cursor-pointer"
+                                                                            onClick={() => window.open(formData.imageurl, "_blank")} // Abrir en una nueva pestaña
+                                                                        />
+                                                                    </div>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                     <Input
                                                         className="w-64"
                                                         isRequired
@@ -1023,6 +1081,7 @@ const Alumnosnlp = () => {
                                             alt="Child Cards"
                                             className="z-0 w-[250px] h-[300px] scale-100 object-cover"
                                             src={alumno.imageurl}
+                                            
                                         />
                                     ) : (
                                         <div className="z-0 w-[250px] h-[300px] scale-100 bg-gray-300 animate-pulse"></div>

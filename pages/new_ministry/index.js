@@ -10,7 +10,8 @@ import {
   collection,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress } from "@nextui-org/react";
+import imageCompression from 'browser-image-compression';
 import { useRouter } from "next/router";
 
 const ministryReference = collection(db, "ministries");
@@ -30,6 +31,8 @@ const NewMinistryComponent = () => {
   const [archivo, setArchivo] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
 
+  const [preview, setPreview] = useState(null);
+
   const categories = [
     { key: "Education", label: "Education" },
     { key: "Health", label: "Health" },
@@ -39,6 +42,9 @@ const NewMinistryComponent = () => {
 
   //estado para formulario
   const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
+
+  // Agrega el estado para el progreso
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Estado para manejar la validez del formulario
   const [formValid, setFormValid] = useState(true);
@@ -53,10 +59,27 @@ const NewMinistryComponent = () => {
     }
   }, []);
 
-  const handleChange = (event) => {
+  const handleChange = async (event) => {
     const archivo = event.target.files[0];
-    console.log("Archivo seleccionado:", archivo);
-    setArchivo(archivo);
+    if (archivo && archivo.type.startsWith('image/') && !archivo.name.toLowerCase().endsWith('.heic')) {
+      try {
+        const compressedFile = await imageCompression(archivo, { maxSizeMB: 1, maxWidthOrHeight: 1024 });
+        setArchivo(compressedFile);
+        setPreview(URL.createObjectURL(compressedFile));
+      } catch (error) {
+        console.error('Error al comprimir la imagen:', error);
+      }
+    } else if (archivo && archivo.name.toLowerCase().endsWith('.heic')) {
+      alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+      setArchivo(null);
+      setPreview(null);
+      event.target.value = ""; // Restablecer el valor del input de archivo
+    } else {
+
+      setArchivo(null);
+      setPreview(null);
+      event.target.value = ""; // Restablecer el valor del input de archivo
+    }
   };
 
   // Función para convertir CalendarDate a Date
@@ -99,7 +122,8 @@ const NewMinistryComponent = () => {
             uploadTask.on(
               "state_changed",
               (snapshot) => {
-                // Progress function ...
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress); // Actualiza el progreso
               },
               (error) => {
                 reject(error);
@@ -148,6 +172,10 @@ const NewMinistryComponent = () => {
         // Resetear el input de archivo
         document.getElementById("logo").value = "";
 
+        // Limpiar las vistas previas
+        setPreview(null);
+        setUploadProgress(0);
+
       } catch (error) {
         console.error("Error al guardar los datos:", error);
       } finally {
@@ -161,7 +189,7 @@ const NewMinistryComponent = () => {
   };
 
   return (
-    
+
     <div className="espacio">
       <Head>
         <title>NUEVO MINISTERIO</title>
@@ -177,6 +205,7 @@ const NewMinistryComponent = () => {
           <p className="text-sm text-gray-600 mb-6">
             POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
           </p>
+          
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="sm:col-span-1">
@@ -360,46 +389,52 @@ const NewMinistryComponent = () => {
 
             </div>
             <Divider className="my-4" />
-            <h2 className="text-lg font-semibold mb-2 ">
-              <p className="text-center">DATOS GRAFICOS DEL MINISTERIO</p>
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
-            </p>
-            <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
-              <div className="sm:col-span-1">
-                <label
-                  htmlFor="logo"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  <a className="font-bold text-lg">LOGO</a>
-                </label>
-                <div className="mt-2 pr-4">
-                  <input
-                    id="logo"
-                    type="file"
-                    onChange={handleChange}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
-                  />
+            <div className="flex justify-center grid grid-cols-1 gap-4 justify-items-center">
+              <div>
+                <h2 className="text-lg font-semibold mb-2 ">
+                  <p className="text-center">DATOS GRAFICOS DEL MINISTERIO</p>
+                </h2>
 
-
-                </div>
               </div>
+              <div className="grid grid-cols-1 justify-items-center ">
+                <div className="col-span-1 justify-items-center">
+                  <label
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    <a className="font-bold text-lg justify-items-center text-center">LOGO</a>
+                  </label>
+                  <div className="mt-2 ">
+                    <input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleChange}
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
+                    />
+                    {preview && (
+                      <img src={preview} alt="Vista previa" className="mt-2 h-20 w-20 object-cover" />
+                    )}
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                onSubmit={handleSubmit}
-                className="h-9 w-40 mt-11 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                disabled={guardando} // Deshabilitar el botón cuando guardando es true
-              >
-                {guardando ? "Guardando..." : "Guardar"}
-              </button>
-              {!formValid && (
-                <p className="text-red-500 mt-2">
-                  {errorMessage}
-                </p>
-              )}
+                <button
+                  type="submit"
+                  onSubmit={handleSubmit}
+                  className="h-9 w-40 mt-4 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  disabled={guardando} // Deshabilitar el botón cuando guardando es true
+                >
+                  {guardando ? "Guardando..." : "Guardar"}
+                </button>
+                {!formValid && (
+                  <p className="text-red-500 mt-2">
+                    {errorMessage}
+                  </p>
+                )}
+              </div>
             </div>
+                <div className="flex justify-center p-4">
+                  <Progress aria-label="Loading..." size="sm" value={uploadProgress} />
+                </div>
           </form>
         </div>
       </div>
