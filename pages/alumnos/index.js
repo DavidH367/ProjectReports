@@ -17,7 +17,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
-import { DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
+import { DateInput, DatePicker } from "@nextui-org/react"; // Importar DatePicker de NextUI
+
 
 const upReference = collection(db, "updates");
 const nlpSchoolReference = collection(db, "nlp");
@@ -60,7 +61,6 @@ const Alumnosnlp = () => {
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
-        age: "",
         grade: "",
         imageurl: "",
         date: null,
@@ -75,7 +75,6 @@ const Alumnosnlp = () => {
     });
     const [firstname, setFirstname] = useState("");
     const [lastname, setLastname] = useState("");
-    const [age, setAge] = useState("");
     const [grade, setGrade] = useState("");
     const [imageurl, setImageurl] = useState("");
     const [date, setDate] = useState(null);
@@ -109,39 +108,17 @@ const Alumnosnlp = () => {
     const [filterValue, setFilterValue] = useState("");
 
     useEffect(() => {
-        const fetchAlumnosNLP = async () => {
-            try {
-                const querySnapshot = await getDocs(nlpSchoolReference);
-
-                const alumnoData = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    alumnoData.push({
-                        id: doc.id,
-                        firstname: data.firstname,
-                        lastname: data.lastname,
-                        age: data.age,
-                        grade: data.grade,
-                        imageurl: data.imageurl,
-                        date: data.date,
-                        indate: data.indate,
-                        sponsor_code: data.sponsor_code,
-                        father: data.father,
-                        mother: data.mother,
-                        household: data.household,
-                        siblings: data.siblings,
-                        co_siblings: data.co_siblings,
-                        status: data.status,
-                    });
-                });
-
-                setAlumnosNLP(alumnoData);
-            } catch (error) {
-                console.error("Error fetching suppliers from Firestore:", error);
-            }
-        };
-        fetchAlumnosNLP();
-    }, [nlpSchoolReference]);
+        const alumnosCollection = collection(db, "nlp");
+        const unsubscribe = onSnapshot(alumnosCollection, (snapshot) => {
+            const alumnosList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setAlumnosNLP(alumnosList); // Actualizar el estado con los datos en tiempo real
+        });
+    
+        return () => unsubscribe(); // Limpiar el listener al desmontar el componente
+    }, []);
 
     useEffect(() => {
         const fetchSponsors = async () => {
@@ -189,7 +166,6 @@ const Alumnosnlp = () => {
             setFormData({
                 firstname: selectedAlumnoData.firstname,
                 lastname: selectedAlumnoData.lastname,
-                age: selectedAlumnoData.age,
                 grade: selectedAlumnoData.grade,
                 imageurl: selectedAlumnoData.imageurl,
                 date: dateOfBirth,
@@ -302,6 +278,40 @@ const Alumnosnlp = () => {
         return `${year}-${month}-${day}`;
     };
 
+    const calculateAge = (birthDate) => {
+        if (!birthDate) return "N/A"; // Manejar el caso en que no haya fecha de nacimiento
+        console.log("birthDate", birthDate);
+        let date;
+        if (birthDate instanceof Timestamp) {
+            // Convertir Timestamp de Firebase a Date
+            date = birthDate.toDate();
+        } else if (birthDate instanceof Date) {
+            // Si ya es un objeto Date, úsalo directamente
+            date = birthDate;
+        } else if (typeof birthDate === "string") {
+            // Si es una cadena de texto en formato día-mes-año
+            const [day, month, year] = birthDate.split("-").map(Number); // Dividir y convertir a números
+            date = new Date(year, month - 1, day); // Crear un objeto Date (meses en JavaScript son 0-11)
+        } else if (birthDate.seconds) {
+            // Manejar el caso en que sea un objeto con segundos (Firestore Timestamp)
+            date = new Date(birthDate.seconds * 1000);
+        } else {
+            return "Invalid Date"; // Manejar el caso de formato no esperado
+        }
+    
+        const today = new Date();
+        let age = today.getFullYear() - date.getFullYear();
+        const monthDiff = today.getMonth() - date.getMonth();
+    
+        // Ajustar la edad si el mes actual es anterior al mes de nacimiento
+        // o si es el mismo mes pero el día actual es anterior al día de nacimiento
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+            age--;
+        }
+    
+        return age;
+    };
+
     const handleModalClose = () => {
         // Restablecer los valores del formulario
         setSelectKey(prevKey => prevKey + 1);
@@ -310,7 +320,6 @@ const Alumnosnlp = () => {
         setDate(null);
         setFirstname("");
         setLastname("");
-        setAge("");
         setGrade("");
         setIndate("");
         setSponsor_code("");
@@ -319,6 +328,7 @@ const Alumnosnlp = () => {
         setHousehold("");
         setSiblings("");
         setCo_siblings("");
+        setPreviewImage(null); // Limpiar la vista previa si no hay archivo
         // Cerrar el modal
         onAddClose();
     };
@@ -326,6 +336,7 @@ const Alumnosnlp = () => {
     const handleModalClose2 = () => {
         resetForm();
         setErrorMessage("");
+        setPreviewImage(null); // Limpiar la vista previa si no hay archivo
         // Cerrar el modal
         onModClose();
     };
@@ -339,7 +350,6 @@ const Alumnosnlp = () => {
             if (
                 !firstname ||
                 !lastname ||
-                !age ||
                 !grade ||
                 !indate
             ) {
@@ -376,7 +386,6 @@ const Alumnosnlp = () => {
                 const newData = {
                     firstname: firstname,
                     lastname: lastname,
-                    age: parseFloat(age),
                     grade: grade,
                     date: calendarDateToUTC(date),
                     imageurl: logoUrl,
@@ -410,7 +419,6 @@ const Alumnosnlp = () => {
                 setSelectKey2(prevKey => prevKey + 1);
                 setFirstname("");
                 setLastname("");
-                setAge("");
                 setGrade("");
                 setDate(null);
                 setArchivo(null);
@@ -422,6 +430,7 @@ const Alumnosnlp = () => {
                 setSiblings("");
                 setCo_siblings("");
                 setStatus("");
+                setPreviewImage(null); // Limpiar la vista previa si no hay archivo
                 // Resetear el input de archivo
                 document.getElementById("logo").value = "";
 
@@ -447,7 +456,6 @@ const Alumnosnlp = () => {
             if (
                 !formData.firstname ||
                 !formData.lastname ||
-                !formData.age ||
                 !formData.indate
             ) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
@@ -482,7 +490,6 @@ const Alumnosnlp = () => {
                 const newData = {
                     firstname: formData.firstname,
                     lastname: formData.lastname,
-                    age: parseFloat(formData.age),
                     indate: parseFloat(formData.indate),
                     father: formData.father,
                     mother: formData.mother,
@@ -491,6 +498,7 @@ const Alumnosnlp = () => {
                     co_siblings: parseFloat(formData.co_siblings),
                     status: formData.status,
                     imageurl: logoUrl, // Actualizar la URL de la imagen
+                    date: calendarDateToUTC(date),
                 };
 
                 // Solo actualizar el campo 'imageurl' si se ha subido una nueva imagen
@@ -516,6 +524,13 @@ const Alumnosnlp = () => {
                 await updateDoc(docRef, newData);
                 await addDoc(upReference, newUpData2);
 
+                // Actualizar el estado local con los datos modificados
+                setAlumnosNLP((prevAlumnos) =>
+                    prevAlumnos.map((alumno) =>
+                        alumno.id === idDocumentos ? { ...alumno, ...newData } : alumno
+                    )
+                );
+
                 // Limpiar formulario después de la actualización
                 resetForm();
 
@@ -536,7 +551,6 @@ const Alumnosnlp = () => {
         setFormData({
             firstname: "",
             lastname: "",
-            age: "",
             grade: "",
             date: null,
             indate: "",
@@ -551,6 +565,7 @@ const Alumnosnlp = () => {
         setSelectKey(prevKey => prevKey + 1);
         setSelectKey2(prevKey => prevKey + 1);
         setArchivo(null);
+        setPreviewImage(null); // Limpiar la vista previa si no hay archivo
         setDate(null);
         setGrade("");
 
@@ -600,7 +615,7 @@ const Alumnosnlp = () => {
 
                             </div>
                             <Modal
-                                size="md"
+                                size="xl"
                                 isOpen={isAddOpen}
                                 onClose={handleModalClose}
                                 scrollBehavior="inside"
@@ -644,17 +659,9 @@ const Alumnosnlp = () => {
                                                         value={lastname}
                                                         onChange={(e) => setLastname(e.target.value)}
                                                     />
-                                                    <Input
-                                                        className="w-64"
-                                                        isRequired
-                                                        label="Age"
-                                                        type="number"
-                                                        id="age"
-                                                        value={age}
-                                                        onChange={(e) => setAge(e.target.value)}
-                                                    />
 
-                                                    <DateInput
+                                                    <DatePicker
+                                                        showMonthAndYearPickers
                                                         className="w-64"
                                                         id="date"
                                                         label="Fecha de Nacimiento:"
@@ -810,7 +817,7 @@ const Alumnosnlp = () => {
 
                             <Modal
                                 backdrop="blur"
-                                size="md"
+                                size="xl"
                                 isOpen={isModOpen}
                                 onClose={handleModalClose2}
                                 scrollBehavior="inside"
@@ -921,15 +928,7 @@ const Alumnosnlp = () => {
                                                         value={formData.lastname}
                                                         onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
                                                     />
-                                                    <Input
-                                                        className="w-64"
-                                                        isRequired
-                                                        label="Age"
-                                                        type="number"
-                                                        id="age"
-                                                        value={formData.age}
-                                                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                                                    />
+
                                                     <Chip size="sm">Grado Actual: {formData.grade}</Chip>
                                                     <Select
                                                         className="max-w-xs w-64"
@@ -948,7 +947,16 @@ const Alumnosnlp = () => {
                                                         ))}
                                                     </Select>
                                                     <Chip size="sm">Fecha de Nacimiento: {formData.date ? formatDate(formData.date) : ""}</Chip>
-
+                                                    <DatePicker
+                                                        showMonthAndYearPickers
+                                                        className="w-64"
+                                                        id="date"
+                                                        label="Actualizar Fecha de Nacimiento:"
+                                                        variant="bordered"
+                                                        value={date}
+                                                        onChange={setDate}
+                                                        dateFormat="dd/MM/yyyy"
+                                                    />
                                                     <div className="sm:col-span-1 py-4">
                                                         <label
 
@@ -1072,7 +1080,6 @@ const Alumnosnlp = () => {
                             <div key={index} className="p-1">
                                 <Card isFooterBlurred className="w-52 h-full col-span-12 sm:col-span-5">
                                     <CardHeader className="absolute z-10 flex-col items-center bg-slate-400/50 p-1">
-                                        <p className="text-tiny text-white/70 uppercase text-center">{alumno.age} years old</p>
                                         <h4 className="text-white text-tiny font-bold uppercase text-sm text-center">{alumno.firstname} {alumno.lastname}</h4>
                                     </CardHeader>
                                     {alumno.imageurl ? (
@@ -1081,7 +1088,7 @@ const Alumnosnlp = () => {
                                             alt="Child Cards"
                                             className="z-0 w-[250px] h-[300px] scale-100 object-cover"
                                             src={alumno.imageurl}
-                                            
+
                                         />
                                     ) : (
                                         <div className="z-0 w-[250px] h-[300px] scale-100 bg-gray-300 animate-pulse"></div>
@@ -1143,7 +1150,7 @@ const Alumnosnlp = () => {
                                         <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
                                         <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
                                         <p className="text-sm ">Sponsor Code: N°{selectedAlumno.sponsor_code}</p>
-                                        <p className="text-sm ">Age: {selectedAlumno.age} years old</p>
+                                        <p className="text-sm ">Age: {calculateAge(selectedAlumno.date)} years old</p>
                                         <p className="text-sm">Grade: {selectedAlumno.grade}</p>
 
                                         <Chip size="md">Fecha de Nacimiento: {selectedAlumno.date}</Chip>

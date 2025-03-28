@@ -512,7 +512,7 @@ const MinistryRecordsComponent = () => {
                             <Input
                               isRequired
                               type="number"
-                              label="L"
+                              label="$"
                               id="budget"
                               autoComplete="Presupuesto"
                               value={formData.budget}

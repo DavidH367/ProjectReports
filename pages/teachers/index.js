@@ -762,7 +762,7 @@ const TeachersNLPComponent = () => {
                                                                 key={selectKey} // Clave para forzar re-renderizado
                                                                 items={teacherss}
                                                                 label="Actualizar a:"
-                                                                placeholder="Selecciona un Alumno"
+                                                                placeholder="Selecciona un Maestro"
                                                                 className="max-w-xs"
                                                                 value={selectedTeachers}
 

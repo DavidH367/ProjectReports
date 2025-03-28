@@ -38,6 +38,8 @@ function Home() {
           <meta name="description" content="INICIO" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <link rel="icon" href="/img/logo_paginas.png" />
+          <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+
         </Head>
         <h1 className="text-lg font-bold p-4 text-center">
           BIENVENIDO(A): {localUser.displayname}

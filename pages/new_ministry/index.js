@@ -10,9 +10,10 @@ import {
   collection,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress, Image } from "@nextui-org/react";
 import imageCompression from 'browser-image-compression';
 import { useRouter } from "next/router";
+
 
 const ministryReference = collection(db, "ministries");
 const upReference = collection(db, "updates");
@@ -199,13 +200,22 @@ const NewMinistryComponent = () => {
       </Head>
       <div className="container mx-auto p-10 justify-center items-center">
         <div className="px-8 bg-white shadow rounded-lg shadow-lg  p-4 box-border h-400 w-800 p-2 border-4 ">
+          <div className="flex justify-center "> 
+          <Image
+          
+            alt="HeroUI Album Cover"
+            className=""
+            src="..\img\logo_paginas.png"
+            width={140}
+          />
+          </div>
           <h2 className="text-lg font-semibold mb-2 ">
             <p className="text-center">DATOS GENERALES DEL MINISTERIO</p>
           </h2>
           <p className="text-sm text-gray-600 mb-6">
             POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
           </p>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="sm:col-span-1">
@@ -378,7 +388,7 @@ const NewMinistryComponent = () => {
                     id="budget"
                     isRequired
                     type="number"
-                    label="L"
+                    label="$"
                     autoComplete="Presupuesto"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
@@ -432,9 +442,9 @@ const NewMinistryComponent = () => {
                 )}
               </div>
             </div>
-                <div className="flex justify-center p-4">
-                  <Progress aria-label="Loading..." size="sm" value={uploadProgress} />
-                </div>
+            <div className="flex justify-center p-4">
+              <Progress aria-label="Loading..." size="sm" value={uploadProgress} />
+            </div>
           </form>
         </div>
       </div>
