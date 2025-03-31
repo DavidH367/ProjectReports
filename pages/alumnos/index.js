@@ -18,6 +18,8 @@ import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectIt
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DateInput, DatePicker } from "@nextui-org/react"; // Importar DatePicker de NextUI
+import imageCompression from 'browser-image-compression';
+
 
 
 const upReference = collection(db, "updates");
@@ -227,19 +229,27 @@ const Alumnosnlp = () => {
         onOpen();
     };
 
-    const handleChange = (event) => {
+    const handleChange = async (event) => {
         const archivo = event.target.files[0];
-        setArchivo(archivo);
-
-        // Generar una vista previa de la imagen
-        if (archivo) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setPreviewImage(reader.result); // Guardar la URL de la vista previa
-            };
-            reader.readAsDataURL(archivo);
+        if (archivo && archivo.type.startsWith('image/') && !archivo.name.toLowerCase().endsWith('.heic')) {
+            try {
+                const compressedFile = await imageCompression(archivo, { maxSizeMB: 1, maxWidthOrHeight: 1024 });
+                setArchivo(compressedFile);
+                const previewUrl = URL.createObjectURL(compressedFile);
+                setPreviewImage(previewUrl);
+                console.log("Vista previa generada:", previewUrl); // Depuración
+            } catch (error) {
+                console.error('Error al comprimir la imagen:', error);
+            }
+        } else if (archivo && archivo.name.toLowerCase().endsWith('.heic')) {
+            alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+            setArchivo(null);
+            setPreviewImage(null);
+            event.target.value = ""; // Restablecer el valor del input de archivo
         } else {
-            setPreviewImage(null); // Limpiar la vista previa si no hay archivo
+            setArchivo(null);
+            setPreviewImage(null);
+            event.target.value = ""; // Restablecer el valor del input de archivo
         }
     };
     // Función para convertir CalendarDate a Date

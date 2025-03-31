@@ -364,7 +364,7 @@ const SponsorsNLPComponent = () => {
                                 />
                             </div>
                             <Modal
-                                size="md"
+                                size="xl"
                                 isOpen={isAddOpen}
                                 onClose={handleModalClose}
                                 scrollBehavior="inside"
@@ -466,7 +466,7 @@ const SponsorsNLPComponent = () => {
 
                             <Modal
                                 backdrop="blur"
-                                size="md"
+                                size="xl"
                                 isOpen={isModOpen}
                                 onClose={handleModalClose2}
                                 scrollBehavior="inside"

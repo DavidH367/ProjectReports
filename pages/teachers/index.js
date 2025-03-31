@@ -18,11 +18,14 @@ import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectIt
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio, Textarea, Divider } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DatePicker, DateInput } from "@nextui-org/react"; // Importar DatePicker de NextUI
+import imageCompression from 'browser-image-compression';
+
 
 const upReference = collection(db, "updates");
 const teachersNLPReference = collection(db, "teachers");
 const sponsorNLPReference = collection(db, "sponsors");
 const storage = getStorage();
+
 const TeachersNLPComponent = () => {
     //Valida acceso a la pagina
     const router = useRouter();
@@ -44,6 +47,9 @@ const TeachersNLPComponent = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [sponsors, setSponsors] = useState([]);
 
+    const [preview, setPreview] = useState(null);
+    // Agrega el estado para el progreso
+    const [uploadProgress, setUploadProgress] = useState(0);
     const statusColorMap = {
         Activo: "success",
         Inactivo: "warning",
@@ -165,6 +171,8 @@ const TeachersNLPComponent = () => {
         fetchSponsors();
     }, [sponsorNLPReference]);
 
+
+
     function handleTeacherChange(event) {
         const selectedTeacherValue = event.target.value;
         // Actualiza el estado con el nuevo valor seleccionado
@@ -229,9 +237,28 @@ const TeachersNLPComponent = () => {
         onOpen();
     };
 
-    const handleChange = (event) => {
+    const handleChange = async (event) => {
         const archivo = event.target.files[0];
-        setArchivo(archivo);
+        if (archivo && archivo.type.startsWith('image/') && !archivo.name.toLowerCase().endsWith('.heic')) {
+            try {
+                const compressedFile = await imageCompression(archivo, { maxSizeMB: 1, maxWidthOrHeight: 1024 });
+                setArchivo(compressedFile);
+                const previewUrl = URL.createObjectURL(compressedFile);
+                setPreview(previewUrl);
+                console.log("Vista previa generada:", previewUrl); // Depuración
+            } catch (error) {
+                console.error('Error al comprimir la imagen:', error);
+            }
+        } else if (archivo && archivo.name.toLowerCase().endsWith('.heic')) {
+            alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+            setArchivo(null);
+            setPreview(null);
+            event.target.value = ""; // Restablecer el valor del input de archivo
+        } else {
+            setArchivo(null);
+            setPreview(null);
+            event.target.value = ""; // Restablecer el valor del input de archivo
+        }
     };
 
     // Función para convertir CalendarDate a Date
@@ -285,6 +312,7 @@ const TeachersNLPComponent = () => {
         setProject("");
         setSponsor_code("");
         setStatus("");
+        setPreview(null);
         // Cerrar el modal
         onAddClose();
     };
@@ -321,16 +349,18 @@ const TeachersNLPComponent = () => {
             }
 
             try {
+
                 let logoUrl = "";
                 if (archivo) {
-                    const archivoRef = ref(storage, `imagenes/imagenes/nlp/maestros/${archivo.name}`);
+                    const archivoRef = ref(storage, `imagenes/imagenes/logos/${archivo.name}`);
                     const uploadTask = uploadBytesResumable(archivoRef, archivo);
 
                     logoUrl = await new Promise((resolve, reject) => {
                         uploadTask.on(
                             "state_changed",
                             (snapshot) => {
-                                // Progress function ...
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                setUploadProgress(progress); // Actualiza el progreso
                             },
                             (error) => {
                                 reject(error);
@@ -366,7 +396,11 @@ const TeachersNLPComponent = () => {
                 await addDoc(teachersNLPReference, newData);
                 await addDoc(upReference, newUpData);
 
-
+                // Actualiza manualmente el estado `teacherss` con el nuevo maestro
+                setTeacherss((prevTeachers) => [
+                    ...prevTeachers,
+                    { id: docRef.id, ...newData }
+                ]);
                 setSelectKey(prevKey => prevKey + 1);
                 setSelectKey2(prevKey => prevKey + 1);
                 setArchivo(null);
@@ -379,8 +413,13 @@ const TeachersNLPComponent = () => {
                 setProject("");
                 setSponsor_code("");
                 setStatus("");
+
                 // Resetear el input de archivo
                 document.getElementById("logo").value = "";
+
+                // Limpiar las vistas previas
+                setPreview(null);
+                setUploadProgress(0);
 
             } catch (error) {
                 console.error("Error al guardar los datos:", error);
@@ -507,6 +546,7 @@ const TeachersNLPComponent = () => {
         setSelectKey2(prevKey => prevKey + 1);
         setArchivo(null);
         setDate(null);
+        setPreview(null);
         setArea("");
 
         // Resetear el input de archivo
@@ -554,7 +594,7 @@ const TeachersNLPComponent = () => {
 
                             </div>
                             <Modal
-                                size="md"
+                                size="3xl"
                                 isOpen={isAddOpen}
                                 onClose={handleModalClose}
                                 scrollBehavior="inside"
@@ -571,7 +611,7 @@ const TeachersNLPComponent = () => {
                                         <>
                                             <ModalHeader className="text-center flex flex-col gap-1">Registrar Nuevo Maestro</ModalHeader>
                                             <ModalBody>
-                                                <div className="grid gap-1 grid-cols-1">
+                                                <div className="flex grid gap-1 grid-cols-1">
                                                     {errorMessage && (
                                                         <div className="text-red-500 text-center mb-4">
                                                             {errorMessage}
@@ -608,7 +648,7 @@ const TeachersNLPComponent = () => {
                                                         onChange={(e) => setAge(e.target.value)}
                                                     />
 
-                                                    <div className="sm:col-span-1 py-4">
+                                                    <div className="col-span-1 ">
                                                         <label
 
                                                             className="block text-sm leading-6 text-gray-900"
@@ -622,7 +662,12 @@ const TeachersNLPComponent = () => {
                                                                 onChange={handleChange}
                                                                 className="w-64 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
                                                             />
-                                                        </div>
+                                                        </div  >
+                                                        {preview && (
+                                                            <div className="mt-4">
+                                                                <img src={preview} alt="Vista previa" className="w-32 h-32 object-cover rounded-md cursor-pointer" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <label
                                                         className=" block text-sm font-medium leading-6 text-gray-900"
@@ -644,7 +689,8 @@ const TeachersNLPComponent = () => {
                                                             </SelectItem>
                                                         ))}
                                                     </Select>
-                                                    <DateInput
+                                                    <DatePicker
+                                                        showMonthAndYearPickers
                                                         className="w-64"
                                                         id="date"
                                                         label="Fecha de Ingreso:"
@@ -655,7 +701,7 @@ const TeachersNLPComponent = () => {
                                                     />
 
                                                     <Textarea
-                                                        className="w-64"
+                                                        className="w-80"
                                                         isRequired
                                                         label="Describe Teacher Skills"
                                                         id="description"
@@ -663,7 +709,7 @@ const TeachersNLPComponent = () => {
                                                         onChange={(e) => setDescription(e.target.value)} />
 
                                                     <Textarea
-                                                        className="w-64"
+                                                        className="w-80"
                                                         isRequired
                                                         label="Describe Teacher Project"
                                                         id="project"
@@ -725,7 +771,7 @@ const TeachersNLPComponent = () => {
 
                             <Modal
                                 backdrop="blur"
-                                size="md"
+                                size="3xl"
                                 isOpen={isModOpen}
                                 onClose={handleModalClose2}
                                 scrollBehavior="inside"
@@ -820,7 +866,7 @@ const TeachersNLPComponent = () => {
 
                                                             className="block text-sm leading-6 text-gray-900"
                                                         >
-                                                            <a className="text-sm font-medium">Fotografia</a>
+                                                            <a className="text-sm font-medium">Nueva Fotografia?</a>
                                                         </label>
                                                         <div className="mt-2 pr-4">
                                                             <input
@@ -855,7 +901,7 @@ const TeachersNLPComponent = () => {
                                                     <Chip size="sm">Fecha de Ingreso: {formData.date ? formatDate(formData.date) : ""}</Chip>
 
                                                     <Textarea
-                                                        className="w-64"
+                                                        className="w-80"
                                                         isRequired
                                                         label="Describe Teacher Skills"
                                                         id="description"
@@ -864,7 +910,7 @@ const TeachersNLPComponent = () => {
                                                     />
 
                                                     <Textarea
-                                                        className="w-64"
+                                                        className="w-80"
                                                         isRequired
                                                         label="Describe Teacher Project"
                                                         id="project"
@@ -981,7 +1027,7 @@ const TeachersNLPComponent = () => {
 
             {selectedTeacher && (
                 <Modal
-                    size="md"
+                    size="xl"
                     isOpen={isOpen}
                     onClose={onClose}
                     scrollBehavior="inside"
@@ -991,12 +1037,14 @@ const TeachersNLPComponent = () => {
                             <>
                                 <ModalHeader className="text-center flex flex-col gap-1">{selectedTeacher.firstname} {selectedTeacher.lastname}</ModalHeader>
                                 <ModalBody>
-                                    <Image
-                                        removeWrapper
-                                        alt="Child Cards"
-                                        className="z-0 w-[250px] h-[300px] scale-90 -translate-y-6 translate-x-20 object-cover"
-                                        src={selectedTeacher.imageurl}
-                                    />
+                                    <div className="flex justify-center items-center">
+                                        <Image
+                                            removeWrapper
+                                            alt="Child Cards"
+                                            className="w-[250px] h-[300px] object-cover rounded-md"
+                                            src={selectedTeacher.imageurl}
+                                        />
+                                    </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
 
                                         <p className="text-base font-bold">Personal Information</p>
