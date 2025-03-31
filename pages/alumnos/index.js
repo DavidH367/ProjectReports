@@ -118,7 +118,7 @@ const Alumnosnlp = () => {
             }));
             setAlumnosNLP(alumnosList); // Actualizar el estado con los datos en tiempo real
         });
-    
+
         return () => unsubscribe(); // Limpiar el listener al desmontar el componente
     }, []);
 
@@ -254,9 +254,11 @@ const Alumnosnlp = () => {
     };
     // Función para convertir CalendarDate a Date
     const calendarDateToUTC = (calendarDate) => {
+        if (!calendarDate) return null; // Manejar el caso en que calendarDate sea null
         const date = new Date(Date.UTC(calendarDate.year, calendarDate.month - 1, calendarDate.day));
         return date;
     };
+    
     const formatDate2 = (timestamp) => {
         const date = timestamp instanceof Date ? timestamp : new Date(timestamp.seconds * 1000);
         const year = date.getFullYear();
@@ -308,17 +310,17 @@ const Alumnosnlp = () => {
         } else {
             return "Invalid Date"; // Manejar el caso de formato no esperado
         }
-    
+
         const today = new Date();
         let age = today.getFullYear() - date.getFullYear();
         const monthDiff = today.getMonth() - date.getMonth();
-    
+
         // Ajustar la edad si el mes actual es anterior al mes de nacimiento
         // o si es el mismo mes pero el día actual es anterior al día de nacimiento
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
             age--;
         }
-    
+
         return age;
     };
 
@@ -510,7 +512,12 @@ const Alumnosnlp = () => {
                     imageurl: logoUrl, // Actualizar la URL de la imagen
                     date: calendarDateToUTC(date),
                 };
-
+                // Solo actualizar el campo 'date' si se seleccionó una nueva fecha
+                if (date) {
+                    newData.date = calendarDateToUTC(date);
+                }else {
+                    newData.date = formData.date; // Mantener la fecha existente si no se seleccionó una nueva
+                }
                 // Solo actualizar el campo 'imageurl' si se ha subido una nueva imagen
                 if (archivo) {
                     newData.imageurl = logoUrl;
