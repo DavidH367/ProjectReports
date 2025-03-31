@@ -80,7 +80,7 @@ const MinistriesComponent = () => {
           };
           const compressedFile = await imageCompression(file, options);
           setArchivo(compressedFile);
-  
+
           // Generar vista previa
           const previewURL = URL.createObjectURL(compressedFile);
           setPreview(previewURL);
@@ -463,57 +463,58 @@ const MinistriesComponent = () => {
 
 
             </div>
+            <Divider className="my-4" />
             <h2 className="text-lg font-semibold mb-2 ">
               <p className="text-center">DATOS GRAFICOS DE LOS PROYECTOS</p>
             </h2>
             <p className="text-sm text-gray-600 mb-6">
               POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS
             </p>
-            <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
-              <div className="sm:col-span-1">
-                <label
-                  htmlFor="precio"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  <a className="font-bold text-lg">LOGO</a>
-                </label>
-                <div className="mt-2 pr-4">
-                  <input
-                    type="file"
-                    id="url1"
-                    accept="image/*"
-                    onChange={(event) => handleFileChange(event, setArchivo1, setPreview1)}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                  />
-                  {preview1 && <img src={preview1} alt="Vista previa 1" width="100" />}
-                </div>
-                <div className="mt-2 pr-4">
-                  <input
-                    type="file"
-                    id="url2"
-                    accept="image/*"
-                    onChange={(event) => handleFileChange(event, setArchivo2, setPreview2)}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                  />
-                  {preview2 && <img src={preview2} alt="Vista previa 2" width="100" />}
-                </div>
-                <div className="mt-2 pr-4">
-                  <input
-                    type="file"
-                    id="url3"
-                    accept="image/*"
-                    onChange={(event) => handleFileChange(event, setArchivo3, setPreview3)}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                  />
-                  {preview3 && <img src={preview3} alt="Vista previa 3" width="100" />}
-                </div>
+            <label
+              htmlFor="precio"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              <a className="font-bold text-lg">Fotos para el Reporte</a>
+            </label>
+            <div className="grid grid-cols-3 gap-y-4 sm:grid-cols-3 md:grid-cols-3">
+
+              <div className="mt-2 pr-4">
+                <input
+                  type="file"
+                  id="url1"
+                  accept="image/*"
+                  onChange={(event) => handleFileChange(event, setArchivo1, setPreview1)}
+                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                />
+                {preview1 && <img src={preview1} alt="Vista previa 1" width="100" />}
               </div>
-              {/* Componente de progreso único */}
-              <Progress value={progressTotal} max={100} />
+              <div className="mt-2 pr-4">
+                <input
+                  type="file"
+                  id="url2"
+                  accept="image/*"
+                  onChange={(event) => handleFileChange(event, setArchivo2, setPreview2)}
+                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                />
+                {preview2 && <img src={preview2} alt="Vista previa 2" width="100" />}
+              </div>
+              <div className="mt-2 pr-4">
+                <input
+                  type="file"
+                  id="url3"
+                  accept="image/*"
+                  onChange={(event) => handleFileChange(event, setArchivo3, setPreview3)}
+                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                />
+                {preview3 && <img src={preview3} alt="Vista previa 3" width="100" />}
+              </div>
+            </div>
+            <Progress className="m-4" value={progressTotal} max={100} />
+            <div className="flex justify-center mt-4">
               <button
                 onSubmit={handleSubmit}
                 type="submit"
-                className="h-9 w-40 mt-11 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="h-9 w-40 mt-2 rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 disabled={guardando} // Deshabilitar el botón cuando guardando es true
               >
                 {guardando ? "Guardando..." : "Guardar"}
