@@ -1,5 +1,5 @@
 import Head from "next/head";
-import React, { useState, useEffect, useMemo  } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "firebase/firestore";
 import { db } from "../../lib/firebase";
 import {
@@ -80,6 +80,7 @@ const HorariosComponent = () => {
     const [selectedAlumnoRep, setSelectedalumnoRep] = useState(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [behdescription, setBehdescription] = useState("");
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
@@ -337,6 +338,7 @@ const HorariosComponent = () => {
                     nombreAlumno: `${formData.firstname} ${formData.lastname}`,
                     title: title,
                     description: description,
+                    behdescription: behdescription,
                     idIncharge: user.uid,
                     teacher: newfullN,
                     date: new Date(),
@@ -438,6 +440,7 @@ const HorariosComponent = () => {
         setSelectKey(prevKey => prevKey + 1);
         setTitle("");
         setDescription("");
+        setBehdescription("");
         setSelectedalumnoRep(null);
     };
 
@@ -493,7 +496,7 @@ const HorariosComponent = () => {
                     </div>
                     <Modal
                         backdrop="blur"
-                        size="md"
+                        size="4xl"
                         isOpen={isModOpen}
                         onClose={handleModalClose2}
                         scrollBehavior="inside"
@@ -516,13 +519,12 @@ const HorariosComponent = () => {
                                                     {errorMessage}
                                                 </div>
                                             )}
-                                            <div className="sm:col-span-1">
+                                            <div className="col-span-1">
 
                                                 <label
                                                     className=" block text-sm font-medium leading-6 text-gray-900"
                                                 >
-                                                    <p className="font-bold text-lg ">Llamados de Atencion o Caso Especial</p>
-                                                    <p className="font-light text-tiny ">Selecciona un Alumno:</p>
+                                                    <p className="font-bold text-lg ">Actualizaciones o Llamados de Atención</p>
                                                 </label>
 
                                                 <div className="mt-2 pr-4">
@@ -530,7 +532,7 @@ const HorariosComponent = () => {
                                                     <Select
                                                         key={selectKey} // Clave para forzar re-renderizado
                                                         items={alumnosReports}
-                                                        label="Actualizar a:"
+                                                        label="Redactar para:"
                                                         placeholder="Selecciona un Alumno"
                                                         className="max-w-xs"
                                                         value={selectedAlumnoRep}
@@ -551,26 +553,39 @@ const HorariosComponent = () => {
                                                 </div>
                                             </div>
                                             <label
-                                                className=" block text-sm font-medium leading-6 text-gray-900"
+                                                className="flex justify-center block text-sm font-medium leading-6 text-gray-900"
                                             >
-                                                <p className="font text-md p-4">Informacion de Reporte </p>
+                                                <p className="font text-lg p-4">Informacion de Reporte </p>
                                             </label>
-                                            <Input
-                                                className="w-64"
-                                                isRequired
-                                                label="Title"
-                                                id="title"
-                                                value={title}
-                                                onChange={(e) => setTitle(e.target.value)}
-                                            />
-                                            <Textarea
-                                                className="w-64"
-                                                isRequired
-                                                label="Description"
-                                                id="description"
-                                                value={description}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                            />
+
+                                            <div className="flex justify-center justify-items-center">
+                                                <Input
+                                                    className="w-96"
+                                                    isRequired
+                                                    label="Title Report:"
+                                                    id="title"
+                                                    value={title}
+                                                    onChange={(e) => setTitle(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="flex flex-wrap gap-3 grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 justify-center justify-items-center">
+                                                <Textarea
+                                                    className="w-80"
+                                                    isRequired
+                                                    label="Academic Description"
+                                                    id="description"
+                                                    value={description}
+                                                    onChange={(e) => setDescription(e.target.value)}
+                                                />
+                                                <Textarea
+                                                    className="w-80"
+                                                    isRequired
+                                                    label="Child Behavior Description:"
+                                                    id="description"
+                                                    value={behdescription}
+                                                    onChange={(e) => setBehdescription(e.target.value)}
+                                                />
+                                            </div>
 
                                         </div>
                                     </ModalBody>

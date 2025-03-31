@@ -4,5 +4,6 @@ export const columns = [
     { title: 'FECHA', field: 'date' },
     { title: 'MAESTRO ENCARGADO', field: 'teacher' },
     { title: 'RAZÓN', field: 'title' },
-    { title: 'DESCRIPCIÓN', field: 'description' },
+    { title: 'ACADEMIC RECORD', field: 'description' },
+    { title: 'BEHAVIOR RECORD', field: 'behdescription' },
 ];
