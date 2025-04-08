@@ -14,7 +14,7 @@ import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import "react-datepicker/dist/react-datepicker.css";
-import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, CardFooter, Image, Button, Select, SelectItem, Chip, Avatar, Skeleton, Alert } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Link, Switch, RadioGroup, Radio } from "@nextui-org/react";
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DateInput, DatePicker } from "@nextui-org/react"; // Importar DatePicker de NextUI
@@ -46,6 +46,8 @@ const Alumnosnlp = () => {
     const [formValid, setFormValid] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [previewImage, setPreviewImage] = useState(null); // Vista previa de la imagen
+    const [alertMessage, setAlertMessage] = useState("");
+    const [showAlert, setShowAlert] = useState(false);
 
     const statusColorMap = {
         Activo: "success",
@@ -66,7 +68,7 @@ const Alumnosnlp = () => {
         grade: "",
         imageurl: "",
         date: null,
-        indate: "",
+        indate: null,
         father: "",
         mother: "",
         household: "",
@@ -81,13 +83,13 @@ const Alumnosnlp = () => {
     const [imageurl, setImageurl] = useState("");
     const [date, setDate] = useState(null);
     const [archivo, setArchivo] = useState(null);
-    const [indate, setIndate] = useState("");
+    const [indate, setIndate] = useState(null);
     const [sponsor_code, setSponsor_code] = useState("N/A");
     const [father, setFather] = useState("");
     const [mother, setMother] = useState("");
     const [household, setHousehold] = useState("");
     const [siblings, setSiblings] = useState("");
-    const [co_siblings, setCo_siblings] = useState("");
+    const [co_siblings, setCo_siblings] = useState(0);
     const [status, setStatus] = useState("");
     const [selectKey, setSelectKey] = useState(0);
     const [selectKey2, setSelectKey2] = useState(100000);
@@ -165,14 +167,23 @@ const Alumnosnlp = () => {
                 ? selectedAlumnoData.date.toDate() // Convertir Timestamp a Date
                 : selectedAlumnoData.date;
 
+            const dateOfSponsor = selectedAlumnoData.indate instanceof Timestamp
+                ? selectedAlumnoData.indate.toDate() // Convertir Timestamp a Date
+                : selectedAlumnoData.indate;
+
+            const lastSponsorDate = selectedAlumnoData.lastSponsorDate instanceof Timestamp
+                ? selectedAlumnoData.lastSponsorDate.toDate()
+                : null;
+
             setFormData({
                 firstname: selectedAlumnoData.firstname,
                 lastname: selectedAlumnoData.lastname,
                 grade: selectedAlumnoData.grade,
                 imageurl: selectedAlumnoData.imageurl,
                 date: dateOfBirth,
-                indate: selectedAlumnoData.indate,
+                indate: dateOfSponsor,
                 sponsor_code: selectedAlumnoData.sponsor_code,
+                lastSponsorDate: lastSponsorDate,
                 father: selectedAlumnoData.father,
                 mother: selectedAlumnoData.mother,
                 household: selectedAlumnoData.household,
@@ -224,6 +235,7 @@ const Alumnosnlp = () => {
         const formattedAlumno = {
             ...alumno,
             date: alumno.date ? formatDate2(alumno.date) : null,
+            
         }
         setSelectedAlumno(formattedAlumno);
         onOpen();
@@ -258,7 +270,7 @@ const Alumnosnlp = () => {
         const date = new Date(Date.UTC(calendarDate.year, calendarDate.month - 1, calendarDate.day));
         return date;
     };
-    
+
     const formatDate2 = (timestamp) => {
         const date = timestamp instanceof Date ? timestamp : new Date(timestamp.seconds * 1000);
         const year = date.getFullYear();
@@ -274,11 +286,11 @@ const Alumnosnlp = () => {
         let parsedDate;
 
         // Verifica si es un objeto Date
-        if (date instanceof Date) {
-            parsedDate = date;
-        } else if (date.seconds && date.nanoseconds) {
+        if (date.seconds && date.nanoseconds) {
+            parsedDate = new Date(date.seconds * 1000); // Convertir Timestamp a Date
+        } else if (date instanceof Date) {
             // Verifica si es un objeto Timestamp (Firestore)
-            parsedDate = new Date(date.seconds * 1000);
+            parsedDate = date;
         } else {
             return "Invalid Date"; // Maneja el caso de formato no esperado
         }
@@ -289,6 +301,7 @@ const Alumnosnlp = () => {
 
         return `${year}-${month}-${day}`;
     };
+    
 
     const calculateAge = (birthDate) => {
         if (!birthDate) return "N/A"; // Manejar el caso en que no haya fecha de nacimiento
@@ -333,13 +346,13 @@ const Alumnosnlp = () => {
         setFirstname("");
         setLastname("");
         setGrade("");
-        setIndate("");
+        setIndate(null);
         setSponsor_code("");
         setFather("");
         setMother("");
         setHousehold("");
         setSiblings("");
-        setCo_siblings("");
+        setCo_siblings(0);
         setPreviewImage(null); // Limpiar la vista previa si no hay archivo
         // Cerrar el modal
         onAddClose();
@@ -394,20 +407,21 @@ const Alumnosnlp = () => {
                         );
                     });
                 }
-
+                const indateTimestamp = Timestamp.fromDate(new Date(indate)); // Convertir a Timestamp
                 const newData = {
                     firstname: firstname,
                     lastname: lastname,
                     grade: grade,
                     date: calendarDateToUTC(date),
                     imageurl: logoUrl,
-                    indate: parseFloat(indate),
+                    indate: indateTimestamp,
+                    dates_sponsorship: sponsor_code === "N/A" ? indateTimestamp : Timestamp.now(),
                     father: father,
                     mother: mother,
                     household: parseFloat(household),
                     siblings: parseFloat(siblings),
                     co_siblings: parseFloat(co_siblings),
-                    sponsor_code: sponsor_code,
+                    sponsor_code: sponsor_code || "N/A",
                     status: status,
                 };
 
@@ -427,6 +441,11 @@ const Alumnosnlp = () => {
                     { id: nlpSchoolReference.id, ...newData },
                 ]);
 
+                // Mostrar el Alert
+                setAlertMessage("Registro de Alumno Guardado");
+                setShowAlert(true);
+                setTimeout(() => setShowAlert(false), 2000);
+
                 setSelectKey(prevKey => prevKey + 1);
                 setSelectKey2(prevKey => prevKey + 1);
                 setFirstname("");
@@ -434,7 +453,7 @@ const Alumnosnlp = () => {
                 setGrade("");
                 setDate(null);
                 setArchivo(null);
-                setIndate("");
+                setIndate(null);
                 setSponsor_code("N/A");
                 setFather("");
                 setMother("");
@@ -499,10 +518,20 @@ const Alumnosnlp = () => {
                     });
                 }
 
+                // Lógica para actualizar dates_sponsorship
+                let updatedDatesSponsorship = formData.dates_sponsorship; // Mantener el valor actual por defecto
+                if (formData.sponsor_code === "N/A" && sponsor_code !== "N/A") {
+                    // Si el alumno no tenía patrocinador y ahora tiene
+                    updatedDatesSponsorship = Timestamp.now();
+                } else if (formData.sponsor_code !== "N/A" && sponsor_code === "N/A") {
+                    // Si el alumno tenía patrocinador y ahora no tiene
+                    updatedDatesSponsorship = Timestamp.now();
+                }
+
                 const newData = {
                     firstname: formData.firstname,
                     lastname: formData.lastname,
-                    indate: parseFloat(formData.indate),
+                    indate: calendarDateToUTC(indate),
                     father: formData.father,
                     mother: formData.mother,
                     household: parseFloat(formData.household),
@@ -511,13 +540,23 @@ const Alumnosnlp = () => {
                     status: formData.status,
                     imageurl: logoUrl, // Actualizar la URL de la imagen
                     date: calendarDateToUTC(date),
+                    sponsor_code: sponsor_code,
+                    dates_sponsorship: updatedDatesSponsorship, // Actualizar dates_sponsorship
                 };
                 // Solo actualizar el campo 'date' si se seleccionó una nueva fecha
                 if (date) {
                     newData.date = calendarDateToUTC(date);
-                }else {
+                } else {
                     newData.date = formData.date; // Mantener la fecha existente si no se seleccionó una nueva
                 }
+
+                // Solo actualizar el campo 'indate' si se seleccionó una nueva fecha
+                if (indate) {
+                    newData.indate = calendarDateToUTC(indate);
+                } else {
+                    newData.indate = formData.indate; // Mantener la fecha existente si no se seleccionó una nueva
+                }
+
                 // Solo actualizar el campo 'imageurl' si se ha subido una nueva imagen
                 if (archivo) {
                     newData.imageurl = logoUrl;
@@ -547,7 +586,10 @@ const Alumnosnlp = () => {
                         alumno.id === idDocumentos ? { ...alumno, ...newData } : alumno
                     )
                 );
-
+                // Mostrar el Alert
+                setAlertMessage("Registro de Alumno Actualizado");
+                setShowAlert(true);
+                setTimeout(() => setShowAlert(false), 2000);
                 // Limpiar formulario después de la actualización
                 resetForm();
 
@@ -570,7 +612,7 @@ const Alumnosnlp = () => {
             lastname: "",
             grade: "",
             date: null,
-            indate: "",
+            indate: null,
             father: "",
             mother: "",
             household: "",
@@ -584,6 +626,7 @@ const Alumnosnlp = () => {
         setArchivo(null);
         setPreviewImage(null); // Limpiar la vista previa si no hay archivo
         setDate(null);
+        setIndate(null);
         setGrade("");
 
         // Resetear el input de archivo
@@ -648,6 +691,11 @@ const Alumnosnlp = () => {
                                     {() => (
                                         <>
                                             <ModalHeader className="text-center flex flex-col gap-1">Registrar Nuevo Alumno</ModalHeader>
+                                            {showAlert && (
+                                                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+                                                    <alert color="success" title={alertMessage} />
+                                                </div>
+                                            )}
                                             <ModalBody>
                                                 <div className="grid gap-1 grid-cols-1">
                                                     {errorMessage && (
@@ -731,6 +779,7 @@ const Alumnosnlp = () => {
                                                             <input
                                                                 type="file"
                                                                 id="logo"
+                                                                accept="image/*"
                                                                 onChange={handleChange}
                                                                 className="w-64 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none mt-2 pr-4"
                                                             />
@@ -747,15 +796,16 @@ const Alumnosnlp = () => {
                                                         </div>
                                                     </div>
 
-                                                    <Input
+                                                    <DatePicker
+                                                        showMonthAndYearPickers
                                                         className="w-64"
-                                                        isRequired
-                                                        label="Year Entered"
-                                                        placeholder="2024"
-                                                        type="number"
                                                         id="indate"
+                                                        label="Fecha de Matricula:"
+                                                        variant="bordered"
                                                         value={indate}
-                                                        onChange={(e) => setIndate(e.target.value)} />
+                                                        onChange={setIndate}
+                                                        dateFormat="dd/MM/yyyy"
+                                                    />
 
                                                     <Select
                                                         key={selectKey2} // Clave para forzar re-renderizado
@@ -850,6 +900,11 @@ const Alumnosnlp = () => {
                                     {() => (
                                         <>
                                             <ModalHeader className="text-center flex flex-col gap-1">Informacion de Alumno</ModalHeader>
+                                            {showAlert && (
+                                                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+                                                    <alert color="success" title={alertMessage} />
+                                                </div>
+                                            )}
                                             <ModalBody>
                                                 <div className="grid gap-1 grid-cols-1">
                                                     {errorMessage && (
@@ -1005,15 +1060,17 @@ const Alumnosnlp = () => {
                                                         <Radio value="Expulsion">Expulsión</Radio>
                                                     </RadioGroup>
 
-                                                    <Input
+                                                    <Chip size="sm">Fecha de Ingreso Actual: {formData.indate ? formatDate(formData.indate) : ""}</Chip>
+                                                    <DatePicker
+                                                        showMonthAndYearPickers
                                                         className="w-64"
-                                                        isRequired
-                                                        label="Year Entered"
-                                                        placeholder="2024"
-                                                        type="number"
-                                                        id="indate"
-                                                        value={formData.indate}
-                                                        onChange={(e) => setFormData({ ...formData, indate: e.target.value })} />
+                                                        id="date"
+                                                        label="Actualizar Fecha de Matricula:"
+                                                        variant="bordered"
+                                                        value={indate}
+                                                        onChange={setIndate}
+                                                        dateFormat="dd/MM/yyyy"
+                                                    />
 
                                                     <Chip size="sm">Patrocinador Actual: {formData.sponsor_code}</Chip>
                                                     <Select
@@ -1026,8 +1083,15 @@ const Alumnosnlp = () => {
                                                         value={sponsor_code}
                                                         onChange={(e) => setSponsor_code(e.target.value)}
                                                     >
+                                                        <SelectItem key="N/A" textValue="N/A">
+                                                            <div className="flex gap-2 items-center">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-small">N/A</span>
+                                                                </div>
+                                                            </div>
+                                                        </SelectItem>
                                                         {sponsors.map((supplier) => (
-                                                            <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >
+                                                            <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`}>
                                                                 <div className="flex gap-2 items-center">
                                                                     <div className="flex flex-col">
                                                                         <span className="text-small">{supplier.code} {supplier.fullname}</span>
@@ -1166,13 +1230,28 @@ const Alumnosnlp = () => {
                                         <p className="text-base font-bold">Personal Information</p>
                                         <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
                                         <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
+                                        <Chip size="md">
+                                            {selectedAlumno.sponsor_code && selectedAlumno.sponsor_code !== "N/A"
+                                                ? "Has Sponsor"
+                                                : (() => {
+                                                    const dates_sponsorship = selectedAlumno.dates_sponsorship
+                                                        ? new Date(selectedAlumno.dates_sponsorship.seconds * 1000) // Convertir Timestamp de Firestore a Date
+                                                        : null;
+
+                                                    if (dates_sponsorship) {
+                                                        const daysWithoutSponsor = Math.floor((new Date() - dates_sponsorship) / (1000 * 60 * 60 * 24));
+                                                        return `No Sponsor for ${daysWithoutSponsor} days`;
+                                                    }
+                                                    return "No Sponsor";
+                                                })()
+                                            }
+                                        </Chip>
                                         <p className="text-sm ">Sponsor Code: N°{selectedAlumno.sponsor_code}</p>
                                         <p className="text-sm ">Age: {calculateAge(selectedAlumno.date)} years old</p>
                                         <p className="text-sm">Grade: {selectedAlumno.grade}</p>
 
                                         <Chip size="md">Fecha de Nacimiento: {selectedAlumno.date}</Chip>
-                                        <p className="text-sm">Year entered: {selectedAlumno.indate}</p>
-                                    </div>
+                                        <p className="text-sm">Date entered: {selectedAlumno.indate ? formatDate(selectedAlumno.indate) : "N/A"}</p>                                    </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
                                         <p className="text-base font-bold">Condition of Living</p>
                                         <p className="text-sm">Father's Name: {selectedAlumno.father}</p>

@@ -16,10 +16,12 @@ import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import ReusableTable from "../../Components/Form/ReusableTable";
 import { columns } from "../../Data/control/datas";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Avatar, Chip, RadioGroup, Radio, Checkbox, Dropdown } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Avatar, Chip, RadioGroup, Radio, Checkbox, Dropdown, Progress } from "@nextui-org/react";
 import "react-datepicker/dist/react-datepicker.css";
 import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextui-org/react";
-import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
+import { Timestamp } from "firebase/firestore";
+import imageCompression from 'browser-image-compression';
+
 
 const upReference = collection(db, "updates");
 const alumnosReference = collection(db, "nlp");
@@ -61,6 +63,12 @@ const HorariosComponent = () => {
     const [selectedLevel, setSelectedLevel] = useState("");
     const [students, setStudents] = useState([]);
     const [attendance, setAttendance] = useState({});
+
+    const [progressTotal, setProgressTotal] = useState(0); // Progreso total
+    const [archivo1, setArchivo1] = useState(null);
+    const [archivo2, setArchivo2] = useState(null);
+    const [preview1, setPreview1] = useState(null);
+    const [preview2, setPreview2] = useState(null);
 
     const [formValid, setFormValid] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
@@ -310,17 +318,79 @@ const HorariosComponent = () => {
         }
     };
 
+    // Función para manejar la compresión
+    const handleFileChange = async (event, setArchivo, setPreview) => {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic')) {
+                try {
+                    // Opciones de compresión
+                    const options = {
+                        maxSizeMB: 1,
+                        maxWidthOrHeight: 1920,
+                        useWebWorker: true,
+                    };
+                    const compressedFile = await imageCompression(file, options);
+                    setArchivo(compressedFile);
+
+                    // Generar vista previa
+                    const previewURL = URL.createObjectURL(compressedFile);
+                    setPreview(previewURL);
+                } catch (error) {
+                    console.error("Error al comprimir la imagen:", error);
+                }
+            } else if (file.name.toLowerCase().endsWith('.heic')) {
+                alert("No se permiten archivos de tipo HEIC. Por favor, seleccione otro formato de imagen.");
+                setArchivo(null);
+                setPreview(null);
+                event.target.value = ""; // Restablecer el valor del input de archivo
+            } else {
+                setArchivo(null);
+                setPreview(null);
+                event.target.value = ""; // Restablecer el valor del input de archivo
+            }
+        }
+    };
+
+    // Función para subir archivos con progreso
+    const uploadFile = (file, updateProgress) => {
+        return new Promise((resolve, reject) => {
+            const archivoRef = ref(storage, `imagenes/imagenes/noticias/${file.name}`);
+            const uploadTask = uploadBytesResumable(archivoRef, file);
+
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    updateProgress(progress); // Actualizar progreso individual
+                },
+                (error) => {
+                    reject(error);
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                }
+            );
+        });
+    };
+
     // Función para actualizar datos
     const handleModAlumno = async () => {
         if (!guardando) {
             setGuardando(true);
-
+            let progress1 = 0, progress2 = 0;
             const idDocumentos = selectedAlumnoRep;
-
+            const updateTotalProgress = () => {
+                const totalProgress = (progress1 + progress2) / 2;
+                setProgressTotal(totalProgress);
+            };
             // Verificar si los campos obligatorios están llenos
             if (
                 !title ||
-                !description
+                !description ||
+                !behdescription ||
+                !selectedAlumnoRep 
             ) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
                 setFormValid(false);
@@ -329,6 +399,21 @@ const HorariosComponent = () => {
             }
 
             try {
+
+                let url1 = "", url2 = "";
+
+                if (archivo1) {
+                    url1 = await uploadFile(archivo1, (progress) => {
+                        progress1 = progress;
+                        updateTotalProgress();
+                    });
+                }
+                if (archivo2) {
+                    url2 = await uploadFile(archivo2, (progress) => {
+                        progress2 = progress;
+                        updateTotalProgress();
+                    });
+                }
 
                 const fullN = await getFullName();
                 const newfullN = fullN;
@@ -342,6 +427,10 @@ const HorariosComponent = () => {
                     idIncharge: user.uid,
                     teacher: newfullN,
                     date: new Date(),
+                    images: {
+                        url1: url1,
+                        url2: url2,
+                    },
                 };
 
                 const newUpData2 = {
@@ -442,6 +531,13 @@ const HorariosComponent = () => {
         setDescription("");
         setBehdescription("");
         setSelectedalumnoRep(null);
+        setArchivo1(null);
+        setArchivo2(null);
+        document.getElementById("url1").value = "";
+        document.getElementById("url2").value = "";
+        setPreview1(null);
+        setPreview2(null);
+        setProgressTotal(0);
     };
 
     const handleSearchChange = (e) => {
@@ -536,6 +632,7 @@ const HorariosComponent = () => {
                                                         placeholder="Selecciona un Alumno"
                                                         className="max-w-xs"
                                                         value={selectedAlumnoRep}
+                                                        isRequired
 
                                                         onChange={handleAlumnoRepChange}
                                                     >
@@ -586,7 +683,31 @@ const HorariosComponent = () => {
                                                     onChange={(e) => setBehdescription(e.target.value)}
                                                 />
                                             </div>
+                                            <div className="grid grid-cols-2 gap-y-4 sm:grid-cols-1 md:grid-cols-2">
 
+                                                <div className="mt-2 pr-4">
+                                                    <input
+                                                        type="file"
+                                                        id="url1"
+                                                        accept="image/*"
+                                                        onChange={(event) => handleFileChange(event, setArchivo1, setPreview1)}
+                                                        className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                                                    />
+                                                    {preview1 && <img src={preview1} alt="Vista previa 1" width="100" />}
+                                                </div>
+                                                <div className="mt-2 pr-4">
+                                                    <input
+                                                        type="file"
+                                                        id="url2"
+                                                        accept="image/*"
+                                                        onChange={(event) => handleFileChange(event, setArchivo2, setPreview2)}
+                                                        className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                                                    />
+                                                    {preview2 && <img src={preview2} alt="Vista previa 2" width="100" />}
+                                                </div>
+                                                
+                                            </div>
+                                            <Progress className="m-4" value={progressTotal} max={100} />
                                         </div>
                                     </ModalBody>
                                     <ModalFooter>
