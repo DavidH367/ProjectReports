@@ -19,7 +19,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure
 import { Timestamp } from "firebase/firestore"; // Importar Timestamp desde firestore
 import { DateInput, DatePicker } from "@nextui-org/react"; // Importar DatePicker de NextUI
 import imageCompression from 'browser-image-compression';
-
+import InputMask from "react-input-mask"; // Importar InputMask
 
 
 const upReference = collection(db, "updates");
@@ -65,7 +65,9 @@ const Alumnosnlp = () => {
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
+        dni: "",
         grade: "",
+        gen: "",
         imageurl: "",
         date: null,
         indate: null,
@@ -75,10 +77,12 @@ const Alumnosnlp = () => {
         siblings: "",
         co_siblings: "",
         sponsor_code: "",
+        dates_sponsorship: null,
         status: ""
     });
     const [firstname, setFirstname] = useState("");
     const [lastname, setLastname] = useState("");
+    const [dni, setDni] = useState("");
     const [grade, setGrade] = useState("");
     const [imageurl, setImageurl] = useState("");
     const [date, setDate] = useState(null);
@@ -91,6 +95,7 @@ const Alumnosnlp = () => {
     const [siblings, setSiblings] = useState("");
     const [co_siblings, setCo_siblings] = useState(0);
     const [status, setStatus] = useState("");
+    const [gen, setGen] = useState("");
     const [selectKey, setSelectKey] = useState(0);
     const [selectKey2, setSelectKey2] = useState(100000);
     const grades = [
@@ -178,12 +183,14 @@ const Alumnosnlp = () => {
             setFormData({
                 firstname: selectedAlumnoData.firstname,
                 lastname: selectedAlumnoData.lastname,
+                dni: selectedAlumnoData.dni,
                 grade: selectedAlumnoData.grade,
+                gen: selectedAlumnoData.gen,
                 imageurl: selectedAlumnoData.imageurl,
                 date: dateOfBirth,
                 indate: dateOfSponsor,
                 sponsor_code: selectedAlumnoData.sponsor_code,
-                lastSponsorDate: lastSponsorDate,
+                dates_sponsorship : selectedAlumnoData.dates_sponsorship,
                 father: selectedAlumnoData.father,
                 mother: selectedAlumnoData.mother,
                 household: selectedAlumnoData.household,
@@ -235,7 +242,7 @@ const Alumnosnlp = () => {
         const formattedAlumno = {
             ...alumno,
             date: alumno.date ? formatDate2(alumno.date) : null,
-            
+
         }
         setSelectedAlumno(formattedAlumno);
         onOpen();
@@ -282,7 +289,8 @@ const Alumnosnlp = () => {
 
     //Funcion para convertir marcas de tiempo a texto
     const formatDate = (date) => {
-        if (!date) return "";
+        console.log("indate:", selectedAlumno.indate);
+        if (!date) return "N/A";
         let parsedDate;
 
         // Verifica si es un objeto Date
@@ -301,7 +309,7 @@ const Alumnosnlp = () => {
 
         return `${year}-${month}-${day}`;
     };
-    
+
 
     const calculateAge = (birthDate) => {
         if (!birthDate) return "N/A"; // Manejar el caso en que no haya fecha de nacimiento
@@ -345,6 +353,8 @@ const Alumnosnlp = () => {
         setDate(null);
         setFirstname("");
         setLastname("");
+        setGen("");
+        setDni("");
         setGrade("");
         setIndate(null);
         setSponsor_code("");
@@ -375,6 +385,7 @@ const Alumnosnlp = () => {
             if (
                 !firstname ||
                 !lastname ||
+                !dni ||
                 !grade ||
                 !indate
             ) {
@@ -411,7 +422,9 @@ const Alumnosnlp = () => {
                 const newData = {
                     firstname: firstname,
                     lastname: lastname,
+                    dni: dni,
                     grade: grade,
+                    gen: gen,
                     date: calendarDateToUTC(date),
                     imageurl: logoUrl,
                     indate: indateTimestamp,
@@ -450,6 +463,8 @@ const Alumnosnlp = () => {
                 setSelectKey2(prevKey => prevKey + 1);
                 setFirstname("");
                 setLastname("");
+                setGen("");
+                setDni("");
                 setGrade("");
                 setDate(null);
                 setArchivo(null);
@@ -487,6 +502,7 @@ const Alumnosnlp = () => {
             if (
                 !formData.firstname ||
                 !formData.lastname ||
+                !formData.dni ||
                 !formData.indate
             ) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
@@ -531,6 +547,8 @@ const Alumnosnlp = () => {
                 const newData = {
                     firstname: formData.firstname,
                     lastname: formData.lastname,
+                    dni: formData.dni,
+                    gen: formData.gen,
                     indate: calendarDateToUTC(indate),
                     father: formData.father,
                     mother: formData.mother,
@@ -610,7 +628,9 @@ const Alumnosnlp = () => {
         setFormData({
             firstname: "",
             lastname: "",
+            dni: "",
             grade: "",
+            gen: "",
             date: null,
             indate: null,
             father: "",
@@ -724,6 +744,34 @@ const Alumnosnlp = () => {
                                                         value={lastname}
                                                         onChange={(e) => setLastname(e.target.value)}
                                                     />
+
+                                                    <InputMask
+                                                        mask="9999-9999-99999" // Máscara para el formato "1807-2002-00011"
+                                                        value={dni}
+                                                        onChange={(e) => setDni(e.target.value)} // Actualizar el estado del DNI
+                                                    >
+                                                        {(inputProps) => (
+                                                            <Input
+                                                                {...inputProps}
+                                                                id="dni"
+                                                                isRequired
+                                                                label="DNI"
+                                                                className="w-64"
+                                                            />
+                                                        )}
+                                                    </InputMask>
+
+                                                    <RadioGroup
+                                                        id="gen"
+                                                        value={gen}
+                                                        isRequired
+                                                        label="Género"
+                                                        className="text-sm"
+                                                        onChange={(e) => setGen(e.target.value)}
+                                                    >
+                                                        <Radio value="M">Male</Radio>
+                                                        <Radio value="F">Female</Radio>
+                                                    </RadioGroup>
 
                                                     <DatePicker
                                                         showMonthAndYearPickers
@@ -1001,6 +1049,23 @@ const Alumnosnlp = () => {
                                                         onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
                                                     />
 
+                                                    <InputMask
+                                                        mask="9999-9999-99999" // Máscara para el formato "1807-2002-00011"
+                                                        value={formData.dni}
+                                                        onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                                                    >
+                                                        {(inputProps) => (
+                                                            <Input
+                                                            {...inputProps}
+                                                            id="dni"
+                                                            className="w-64"
+                                                            isRequired
+                                                            label="DNI"
+                                                          
+                                                        />
+                                                        )}
+                                                    </InputMask>
+
                                                     <Chip size="sm">Grado Actual: {formData.grade}</Chip>
                                                     <Select
                                                         className="max-w-xs w-64"
@@ -1029,6 +1094,18 @@ const Alumnosnlp = () => {
                                                         onChange={setDate}
                                                         dateFormat="dd/MM/yyyy"
                                                     />
+
+                                                    <RadioGroup
+                                                        id="gen"
+                                                        value={formData.gen}
+                                                        isRequired
+                                                        label="Género"
+                                                        className="text-sm"
+                                                        onChange={(e) => setFormData({ ...formData, gen: e.target.value })}
+                                                    >
+                                                        <Radio value="M">Male</Radio>
+                                                        <Radio value="F">Female</Radio>
+                                                    </RadioGroup>
                                                     <div className="sm:col-span-1 py-4">
                                                         <label
 
@@ -1182,6 +1259,7 @@ const Alumnosnlp = () => {
                                             <div className="grid grid-cols-1 justify-items-center">
                                                 <div className="py-1">
                                                     <Chip className="capitalize" radius="sm" color={statusColorMap[alumno.status]} size="sm" variant="faded">{alumno.status}</Chip>
+                                                    <Chip className="capitalize mx-1" radius="sm" color={statusColorMap[alumno.gen]} size="md" variant="faded">{alumno.gen}</Chip>
                                                     <Button
                                                         className="text-black text-tiny w-16 h-6 rounded-md bg-white "
                                                         onPress={() => handleOpen(alumno)}>
@@ -1228,13 +1306,15 @@ const Alumnosnlp = () => {
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
 
                                         <p className="text-base font-bold">Personal Information</p>
+                                        <Chip size="md">Child ID: {selectedAlumno.dni}</Chip>
                                         <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
                                         <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
+                                        <Chip size="md">Gen: {selectedAlumno.gen} </Chip>
                                         <Chip size="md">
                                             {selectedAlumno.sponsor_code && selectedAlumno.sponsor_code !== "N/A"
                                                 ? "Has Sponsor"
                                                 : (() => {
-                                                    const dates_sponsorship = selectedAlumno.dates_sponsorship
+                                                    const dates_sponsorship = selectedAlumno.dates_sponsorship 
                                                         ? new Date(selectedAlumno.dates_sponsorship.seconds * 1000) // Convertir Timestamp de Firestore a Date
                                                         : null;
 
