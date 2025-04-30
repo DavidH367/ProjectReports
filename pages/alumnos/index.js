@@ -190,7 +190,7 @@ const Alumnosnlp = () => {
                 date: dateOfBirth,
                 indate: dateOfSponsor,
                 sponsor_code: selectedAlumnoData.sponsor_code,
-                dates_sponsorship : selectedAlumnoData.dates_sponsorship,
+                dates_sponsorship: selectedAlumnoData.dates_sponsorship,
                 father: selectedAlumnoData.father,
                 mother: selectedAlumnoData.mother,
                 household: selectedAlumnoData.household,
@@ -289,7 +289,6 @@ const Alumnosnlp = () => {
 
     //Funcion para convertir marcas de tiempo a texto
     const formatDate = (date) => {
-        console.log("indate:", selectedAlumno.indate);
         if (!date) return "N/A";
         let parsedDate;
 
@@ -401,6 +400,17 @@ const Alumnosnlp = () => {
             }
 
             try {
+                // Verificar si el DNI ya existe en la base de datos
+                const querySnapshot = await getDocs(collection(db, "nlp"));
+                const dniExists = querySnapshot.docs.some((doc) => doc.data().dni === dni);
+
+                if (dniExists) {
+                    setErrorMessage("El número de DNI ya está registrado. Por favor, ingrese uno diferente.");
+                    setFormValid(false);
+                    setGuardando(false);
+                    return; // Detener el proceso si el DNI ya existe
+                }
+
                 let logoUrl = "";
                 if (archivo) {
                     const archivoRef = ref(storage, `imagenes/imagenes/nlp/alumnos/${archivo.name}`);
@@ -1056,13 +1066,13 @@ const Alumnosnlp = () => {
                                                     >
                                                         {(inputProps) => (
                                                             <Input
-                                                            {...inputProps}
-                                                            id="dni"
-                                                            className="w-64"
-                                                            isRequired
-                                                            label="DNI"
-                                                          
-                                                        />
+                                                                {...inputProps}
+                                                                id="dni"
+                                                                className="w-64"
+                                                                isRequired
+                                                                label="DNI"
+
+                                                            />
                                                         )}
                                                     </InputMask>
 
@@ -1314,7 +1324,7 @@ const Alumnosnlp = () => {
                                             {selectedAlumno.sponsor_code && selectedAlumno.sponsor_code !== "N/A"
                                                 ? "Has Sponsor"
                                                 : (() => {
-                                                    const dates_sponsorship = selectedAlumno.dates_sponsorship 
+                                                    const dates_sponsorship = selectedAlumno.dates_sponsorship
                                                         ? new Date(selectedAlumno.dates_sponsorship.seconds * 1000) // Convertir Timestamp de Firestore a Date
                                                         : null;
 
