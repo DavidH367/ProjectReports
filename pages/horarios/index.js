@@ -390,7 +390,7 @@ const HorariosComponent = () => {
                 !title ||
                 !description ||
                 !behdescription ||
-                !selectedAlumnoRep 
+                !selectedAlumnoRep
             ) {
                 setErrorMessage("Por favor, complete todos los campos obligatorios.");
                 setFormValid(false);
@@ -502,7 +502,8 @@ const HorariosComponent = () => {
     };
 
     const handleModalClose = () => {
-        resetForm();
+        setSelectedalumnoRep(null);
+        setSelectKey(prevKey => prevKey + 1);
         setErrorMessage("");
         // Opción: limpiar la lista y el nivel seleccionado después de guardar
         setStudents([]);
@@ -705,7 +706,7 @@ const HorariosComponent = () => {
                                                     />
                                                     {preview2 && <img src={preview2} alt="Vista previa 2" width="100" />}
                                                 </div>
-                                                
+
                                             </div>
                                             <Progress className="m-4" value={progressTotal} max={100} />
                                         </div>
@@ -754,7 +755,16 @@ const HorariosComponent = () => {
                                                 key={selectKey} // Clave para forzar re-renderizado
                                                 label="Selecciona el Nivel"
                                                 placeholder="Selecciona un Nivel"
-                                                onSelectionChange={(nivel) => setSelectedLevel(nivel.currentKey)} // Asegúrate de manejar el cambio correctamente
+                                                onSelectionChange={(nivel) => {
+                                                    if (!nivel.currentKey) {
+                                                        // Si no hay nivel seleccionado, limpiar la lista de estudiantes y el nivel
+                                                        setStudents([]);
+                                                        setSelectedLevel(null);
+                                                    } else {
+                                                        // Si hay nivel seleccionado, actualizar el estado
+                                                        setSelectedLevel(nivel.currentKey);
+                                                    }
+                                                }}
                                             >
                                                 {levelKeys.map((key) => (
                                                     <SelectItem key={key} value={key}>
