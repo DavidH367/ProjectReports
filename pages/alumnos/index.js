@@ -1347,7 +1347,7 @@ const Alumnosnlp = () => {
                                     </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
                                         <p className="text-lg font-bold">Academic Information</p>
-                                        <p className="text-sm">{selectedAlumno.grade}, Date entered: {selectedAlumno.indate ? formatDate(selectedAlumno.indate) : "N/A"}</p>
+                                        <p className="text-sm">{selectedAlumno.grade}, Date entered: {selectedAlumno.indate ? formatDate2(selectedAlumno.indate) : "N/A"}</p>
                                         <Chip size="md">
                                             {selectedAlumno.sponsor_code && selectedAlumno.sponsor_code !== "N/A"
                                                 ? "Has Sponsor"
