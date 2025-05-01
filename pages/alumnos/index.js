@@ -1243,12 +1243,14 @@ const Alumnosnlp = () => {
                             </Modal>
                         </div>
                     </div>
-                    <div className="grid 2xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-center items-center p-2">
                         {currentItems.map((alumno, index) => (
-                            <div key={index} className="p-1">
-                                <Card isFooterBlurred className="w-52 h-full col-span-12 sm:col-span-5">
+                            <div key={index} className="flex justify-center items-center">
+                                <Card isFooterBlurred className="w-52 h-full">
                                     <CardHeader className="absolute z-10 flex-col items-center bg-slate-400/50 p-1">
-                                        <h4 className="text-white text-tiny font-bold uppercase text-sm text-center">{alumno.firstname} {alumno.lastname}</h4>
+                                        <h4 className="text-white text-tiny font-bold uppercase text-sm text-center">
+                                            {alumno.firstname} {alumno.lastname}
+                                        </h4>
                                     </CardHeader>
                                     {alumno.imageurl ? (
                                         <Image
@@ -1256,29 +1258,41 @@ const Alumnosnlp = () => {
                                             alt="Child Cards"
                                             className="z-0 w-[250px] h-[300px] scale-100 object-cover"
                                             src={alumno.imageurl}
-
                                         />
                                     ) : (
                                         <div className="z-0 w-[250px] h-[300px] scale-100 bg-gray-300 animate-pulse"></div>
                                     )}
                                     <CardFooter className="absolute bg-white/30 bottom-0 border-t-0 border-zinc-100/50 z-10 grid justify-items-center text-center -p-1">
                                         <div>
-                                            <p className="text-black text-tiny"> Sponsor Code: N° {alumno.sponsor_code} </p>
-
-
+                                            <p className="text-black text-tiny">Sponsor Code: N° {alumno.sponsor_code}</p>
                                             <div className="grid grid-cols-1 justify-items-center">
                                                 <div className="py-1">
-                                                    <Chip className="capitalize" radius="sm" color={statusColorMap[alumno.status]} size="sm" variant="faded">{alumno.status}</Chip>
-                                                    <Chip className="capitalize mx-1" radius="sm" color={statusColorMap[alumno.gen]} size="md" variant="faded">{alumno.gen}</Chip>
+                                                    <Chip
+                                                        className="capitalize"
+                                                        radius="sm"
+                                                        color={statusColorMap[alumno.status]}
+                                                        size="sm"
+                                                        variant="faded"
+                                                    >
+                                                        {alumno.status}
+                                                    </Chip>
+                                                    <Chip
+                                                        className="capitalize mx-1"
+                                                        radius="sm"
+                                                        color={statusColorMap[alumno.gen]}
+                                                        size="md"
+                                                        variant="faded"
+                                                    >
+                                                        {alumno.gen}
+                                                    </Chip>
                                                     <Button
-                                                        className="text-black text-tiny w-16 h-6 rounded-md bg-white "
-                                                        onPress={() => handleOpen(alumno)}>
+                                                        className="text-black text-tiny w-16 h-6 rounded-md bg-white"
+                                                        onPress={() => handleOpen(alumno)}
+                                                    >
                                                         More Info
                                                     </Button>
-
                                                 </div>
                                             </div>
-
                                         </div>
                                     </CardFooter>
                                 </Card>
@@ -1297,7 +1311,7 @@ const Alumnosnlp = () => {
 
             {selectedAlumno && (
                 <Modal
-                    size="md"
+                    size="lg"
                     isOpen={isOpen}
                     onClose={onClose}
                     scrollBehavior="inside"
@@ -1307,19 +1321,33 @@ const Alumnosnlp = () => {
                             <>
                                 <ModalHeader className="text-center flex flex-col gap-1">{selectedAlumno.firstname} {selectedAlumno.lastname}</ModalHeader>
                                 <ModalBody>
-                                    <Image
-                                        removeWrapper
-                                        alt="Child Cards"
-                                        className="z-0 w-[250px] h-[300px] scale-90 -translate-y-6 translate-x-20 object-cover"
-                                        src={selectedAlumno.imageurl}
-                                    />
+                                    <div className="flex justify-center items-center">
+                                        <Image
+                                            removeWrapper
+                                            alt="Child Cards"
+                                            radius="lg"
+                                            className="z-0 w-[250px] h-[300px] object-cover"
+                                            src={selectedAlumno.imageurl}
+                                        />
+                                    </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
 
-                                        <p className="text-base font-bold">Personal Information</p>
-                                        <Chip size="md">Child ID: {selectedAlumno.dni}</Chip>
-                                        <Chip size="md">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
-                                        <Chip className="capitalize" color={statusColorMap[selectedAlumno.status]} size="md" variant="flat">{selectedAlumno.status}</Chip>
-                                        <Chip size="md">Gen: {selectedAlumno.gen} </Chip>
+                                        <p className="text-lg font-bold">Personal Information</p>
+                                        <div className="px-6 py-2 flex gap-2 items-center justify-center">
+                                            <Chip size="lg" radius="sm">Gen: {selectedAlumno.gen} </Chip>
+                                            <Chip size="lg" className="capitalize" radius="sm" color={statusColorMap[selectedAlumno.status]} variant="flat">{selectedAlumno.status}</Chip>
+                                            <Chip size="lg" className="text-sm " radius="sm">{calculateAge(selectedAlumno.date)} years old</Chip>
+                                        </div>
+
+                                        <Chip size="lg">Full Name: {selectedAlumno.firstname} {selectedAlumno.lastname}</Chip>
+                                        <Chip size="lg">Child ID: {selectedAlumno.dni}<br /></Chip>
+                                        <Chip size="md">Birth Date: {selectedAlumno.date}</Chip>
+
+
+                                    </div>
+                                    <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
+                                        <p className="text-lg font-bold">Academic Information</p>
+                                        <p className="text-sm">{selectedAlumno.grade}, Date entered: {selectedAlumno.indate ? formatDate(selectedAlumno.indate) : "N/A"}</p>
                                         <Chip size="md">
                                             {selectedAlumno.sponsor_code && selectedAlumno.sponsor_code !== "N/A"
                                                 ? "Has Sponsor"
@@ -1337,13 +1365,10 @@ const Alumnosnlp = () => {
                                             }
                                         </Chip>
                                         <p className="text-sm ">Sponsor Code: N°{selectedAlumno.sponsor_code}</p>
-                                        <p className="text-sm ">Age: {calculateAge(selectedAlumno.date)} years old</p>
-                                        <p className="text-sm">Grade: {selectedAlumno.grade}</p>
+                                    </div>
 
-                                        <Chip size="md">Fecha de Nacimiento: {selectedAlumno.date}</Chip>
-                                        <p className="text-sm">Date entered: {selectedAlumno.indate ? formatDate(selectedAlumno.indate) : "N/A"}</p>                                    </div>
                                     <div className="grid gap-1 grid-cols-1 text-center justify-items-center">
-                                        <p className="text-base font-bold">Condition of Living</p>
+                                        <p className="text-lg font-bold">Condition of Living</p>
                                         <p className="text-sm">Father's Name: {selectedAlumno.father}</p>
                                         <p className="text-sm">Mother's Name: {selectedAlumno.mother}</p>
                                         <p className="text-sm">People living in the household: {selectedAlumno.household}</p>
