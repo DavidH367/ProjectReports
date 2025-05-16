@@ -11,7 +11,7 @@ import {
   doc,
   where
 } from "firebase/firestore";
-import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress } from "@nextui-org/react";
+import { Input, Select, SelectItem, Textarea, DatePicker, Divider, Progress, Radio, RadioGroup } from "@nextui-org/react";
 import { useAuth } from "../../lib/context/AuthContext";
 import { useRouter } from "next/router";
 import "react-datepicker/dist/react-datepicker.css";
@@ -43,6 +43,7 @@ const MinistriesComponent = () => {
   const [preview3, setPreview3] = useState(null);
   const [selectKey, setSelectKey] = useState(0);
   const [progressTotal, setProgressTotal] = useState(0); // Progreso total
+  const [selectedType, setSelectedType] = React.useState("Noticia");
 
 
   //estado para validar solo un guardado
@@ -256,6 +257,7 @@ const MinistriesComponent = () => {
           date: calendarDateToUTC(dateup), // Guardar la fecha actual en Firebase
           act_bugdet: parseFloat(act_bugdet),
           zone: zone,
+          type: selectedType,
           images: {
             url1: url1,
             url2: url2,
@@ -283,6 +285,7 @@ const MinistriesComponent = () => {
         setArchivo1(null);
         setArchivo2(null);
         setArchivo3(null);
+        setSelectedType("Noticia"); 
 
         // Resetear el input de archivo
         document.getElementById("url1").value = "";
@@ -320,12 +323,19 @@ const MinistriesComponent = () => {
       <div className="container mx-auto p-10 justify-center items-center h-full">
         <div className='px-8 bg-white shadow rounded-lg shadow-lg  p-4 box-border h-400 w-800 p-2 border-4 mb-10'>
           <h2 className="text-lg font-semibold mb-2 ">
-            <p className='text-center'>
-              AGREGAR NUEVA ACTIVIDAD COMPLETADA A PROYECTOS
+            <p className='text-center font-bold text-xl'>
+              AGREGAR NUEVA ACTIVIDAD/NECESIDAD A PROYECTOS
             </p>
           </h2>
           <p className="text-sm text-gray-600 mb-6">POR FAVOR LLENAR TODOS LOS CAMPOS NECESARIOS</p>
           <form onSubmit={handleSubmit} >
+            <Divider className="my-4" />
+            <div className="flex flex-col gap-3">
+              <RadioGroup label="Seleccione el tipo de Actualización" orientation="horizontal" value={selectedType} onValueChange={setSelectedType} isRequired> 
+                <Radio value="Noticia">Noticia de Ministerio</Radio>
+                <Radio value="Necesidad">Nueva Necesidad de Ministerio</Radio>
+              </RadioGroup>
+            </div>
             <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="sm:col-span-1">
                 <label htmlFor="n_cheque" className="block text-sm font-medium leading-6 text-gray-900">
@@ -337,7 +347,7 @@ const MinistriesComponent = () => {
                   <Select
                     key={selectKey} // Clave para forzar re-renderizado
                     items={ministries}
-                    label="Actualizar a:"
+                    label="Actualizacion a:"
                     placeholder="Selecciona un Proyecto"
                     className="max-w-xs"
                     value={selectedMinistry}
@@ -361,7 +371,7 @@ const MinistriesComponent = () => {
                 <label
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <a className="font-bold text-lg">Titulo de Actividad</a>
+                  <a className="font-bold text-lg">Título</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
@@ -381,7 +391,7 @@ const MinistriesComponent = () => {
                 <label
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <a className="font-bold text-lg">Descripcion de Actividad</a>
+                  <a className="font-bold text-lg">Descripción</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Textarea
@@ -424,7 +434,7 @@ const MinistriesComponent = () => {
                 <label
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <a className="font-bold text-lg">Presupuesto de Actividad</a>
+                  <a className="font-bold text-lg">Presupuestos</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
@@ -444,7 +454,7 @@ const MinistriesComponent = () => {
                 <label
                   className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <a className="font-bold text-lg">ZONA</a>
+                  <a className="font-bold text-lg">Zona</a>
                 </label>
                 <div className="mt-2 pr-4">
                   <Input
