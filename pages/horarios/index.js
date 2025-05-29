@@ -9,7 +9,7 @@ import {
     getDocs,
     doc,
     onSnapshot,
-    where
+    where, setDoc
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../../lib/context/AuthContext";
@@ -89,6 +89,16 @@ const HorariosComponent = () => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [behdescription, setBehdescription] = useState("");
+
+    const [selectKey, setSelectKey] = useState(0);
+    const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
+
+    // Estados nuevos
+    const [selectedWeek, setSelectedWeek] = useState(getLastFourWeeks()[0]);
+    const [attendanceByDay, setAttendanceByDay] = useState({}); // { studentId: { fechaISO: true/false } }
+
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
+
     const [formData, setFormData] = useState({
         firstname: "",
         lastname: "",
@@ -108,14 +118,11 @@ const HorariosComponent = () => {
 
     const levels = {
         1: ["1st grade", "2nd grade"],
-        2: ["3rd grade", "4th grade", "5th grade"],
-        3: ["6th grade", "7th grade"],
-        4: ["8th grade", "9th grade"],
+        2: ["3rd grade", "4th grade"],
+        3: ["5th grade", "6th grade"],
+        4: ["7th grade", "8th grade", "9th grade"],
     };
 
-    const [selectKey, setSelectKey] = useState(0);
-    //estado para formulario
-    const [guardando, setGuardando] = useState(false); // Estado para controlar el botón
 
     const fetchAttendanceHistory = async () => {
         try {
@@ -162,31 +169,6 @@ const HorariosComponent = () => {
         }
     };
 
-    const groupAttendanceByMonth = (attendanceList) => {
-        return attendanceList.reduce((acc, record) => {
-            const date = new Date(record.date.seconds * 1000); // Convertir a Date
-            const monthYear = `${date.getMonth() + 1}-${date.getFullYear()}`; // Formato: MM-YYYY
-            if (!acc[monthYear]) {
-                acc[monthYear] = [];
-            }
-            acc[monthYear].push(record);
-            return acc;
-        }, {});
-    };
-    const groupedAttendance = useMemo(() => groupAttendanceByMonth(filteredAttendance), [filteredAttendance]);
-
-    const handleHistoryOpen = () => {
-        setIsHistoryOpen(true);
-    };
-
-    const handleHistoryClose = () => {
-        // Restablece todos los valores cuando el modal se cierra
-        setSelectedStudent(null); // Restablece el estudiante seleccionado
-        setSelectedDateRange({ start: '', end: '' }); // Restablece el rango de fechas
-        setFilteredAttendance([]);
-        setIsHistoryOpen(false);
-    };
-
     useEffect(() => {
         if (selectedStudent || selectedDateRange.start || selectedDateRange.end) {
             fetchAttendanceHistory();
@@ -214,35 +196,6 @@ const HorariosComponent = () => {
             fetchStudents();
         }
     }, [selectedLevel]);
-
-    const handleAttendanceChange = (studentId) => {
-        setAttendance((prev) => ({
-            ...prev,
-            [studentId]: !prev[studentId],
-        }));
-    };
-
-    const handleSaveAttendance = async () => {
-        try {
-            const attendanceData = students.map((student) => ({
-                studentId: student.id,
-                studentName: `${student.firstname} ${student.lastname}`,
-                attended: attendance[student.id] || false,
-                date: new Date(),
-            }));
-
-            for (let entry of attendanceData) {
-                await addDoc(collection(db, "attendance"), entry);
-            }
-            // Opción: limpiar la lista y el nivel seleccionado después de guardar
-            setStudents([]);
-            setSelectedLevel(null);
-            handleModalClose();
-        } catch (error) {
-            setErrorMessage("Error saving attendance.");
-            console.error("Error saving attendance: ", error);
-        }
-    };
 
     useEffect(() => {
         const fetchAlumnosRep = async () => {
@@ -318,6 +271,38 @@ const HorariosComponent = () => {
         }
     };
 
+
+    const handleHistoryOpen = () => {
+        setIsHistoryOpen(true);
+    };
+
+    const handleHistoryClose = () => {
+        // Restablece todos los valores cuando el modal se cierra
+        setSelectedStudent(null); // Restablece el estudiante seleccionado
+        setSelectedDateRange({ start: '', end: '' }); // Restablece el rango de fechas
+        setFilteredAttendance([]);
+        setIsHistoryOpen(false);
+    };
+
+    const handleModalClose2 = () => {
+        resetForm();
+        setErrorMessage("");
+        // Cerrar el modal
+
+        onModClose();
+    };
+
+    // Limpiar alumnos y asistencias al cerrar modal
+    const handleModalClose = () => {
+        setSelectedalumnoRep(null);
+        setSelectKey(prevKey => prevKey + 1);
+        setErrorMessage("");
+        setStudents([]);
+        setSelectedLevel(null);
+        setAttendanceByDay({});
+        onAddClose();
+    };
+
     // Función para manejar la compresión
     const handleFileChange = async (event, setArchivo, setPreview) => {
         const file = event.target.files[0];
@@ -373,6 +358,191 @@ const HorariosComponent = () => {
                 }
             );
         });
+    };
+
+
+    const resetForm = () => {
+        setFormData({
+            firstname: "",
+            lastname: "",
+            age: "",
+            grade: "",
+            date: null,
+            indate: "",
+            father: "",
+            mother: "",
+            household: "",
+            siblings: "",
+            co_siblings: "",
+            sponsor_code: "",
+            status: ""
+        });
+        setSelectKey(prevKey => prevKey + 1);
+        setTitle("");
+        setDescription("");
+        setBehdescription("");
+        setSelectedalumnoRep(null);
+        setArchivo1(null);
+        setArchivo2(null);
+        document.getElementById("url1").value = "";
+        document.getElementById("url2").value = "";
+        setPreview1(null);
+        setPreview2(null);
+        setProgressTotal(0);
+    };
+
+    const groupAttendanceByMonth = (attendanceList) => {
+        return attendanceList.reduce((acc, record) => {
+            const date = new Date(record.date.seconds * 1000); // Convertir a Date
+            const monthYear = `${date.getMonth() + 1}-${date.getFullYear()}`; // Formato: MM-YYYY
+            if (!acc[monthYear]) {
+                acc[monthYear] = [];
+            }
+            acc[monthYear].push(record);
+            return acc;
+        }, {});
+    };
+    const groupedAttendance = useMemo(() => groupAttendanceByMonth(filteredAttendance), [filteredAttendance]);
+
+
+    // Utilidad para obtener la fecha en formato YYYY-MM-DD
+    function getDateKey(date) {
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+    }
+
+    // Guardar asistencias para la semana seleccionada
+    const handleSaveAttendance = async () => {
+        try {
+            const classDays = getClassDaysOfWeek(selectedWeek);
+            for (let student of students) {
+                for (let day of classDays) {
+                    const attended = attendanceByDay[student.id]?.[getDateKey(day.date)] || false;
+                    // Usa un ID único por alumno y día
+                    const docId = `${student.id}_${getDateKey(day.date)}`;
+                    await setDoc(doc(db, "attendance", docId), {
+                        studentId: student.id,
+                        studentName: `${student.firstname} ${student.lastname}`,
+                        attended,
+                        date: day.date,
+                    });
+                }
+            }
+            setStudents([]);
+            setSelectedLevel(null);
+            setAttendanceByDay({});
+            handleModalClose();
+        } catch (error) {
+            setErrorMessage("Error guardando asistencia.");
+            console.error("Error guardando asistencia: ", error);
+        }
+    };
+
+
+    // Función para cargar asistencias previas de los alumnos para la semana seleccionada
+    const fetchAttendanceForWeek = async (level, week) => {
+        if (!level || !week) {
+            setAttendanceByDay({});
+            return;
+        }
+        setLoadingAttendance(true);
+        try {
+            // Obtener los alumnos del nivel seleccionado
+            const studentQuery = query(
+                collection(db, "nlp"),
+                where("grade", "in", levels[level]),
+                where("status", "==", "Activo")
+            );
+            const studentSnapshot = await getDocs(studentQuery);
+            const studentsList = studentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // Obtener los días de clase de la semana
+            const classDays = getClassDaysOfWeek(week);
+            const start = classDays[0].date;
+            const end = classDays[1].date;
+
+            // Consultar asistencias de la semana para esos alumnos
+            const attendanceQuery = query(
+                collection(db, "attendance"),
+                where("studentId", "in", studentsList.map(s => s.id)),
+                where("date", ">=", start),
+                where("date", "<=", end)
+            );
+            const attendanceSnapshot = await getDocs(attendanceQuery);
+
+            // Mapear asistencias por alumno y día
+            const attendanceMap = {};
+            studentsList.forEach(student => {
+                attendanceMap[student.id] = {};
+                classDays.forEach(day => {
+                    attendanceMap[student.id][getDateKey(day.date)] = false; // Siempre la clave YYYY-MM-DD
+                });
+            });
+
+            console.log('Claves de días:', classDays.map(day => getDateKey(day.date)));
+            attendanceSnapshot.forEach(doc => {
+                const data = doc.data();
+                const dateKey = getDateKey(data.date.seconds ? data.date.seconds * 1000 : data.date);
+                console.log('Firestore:', data.studentId, dateKey, data.attended);
+                if (attendanceMap[data.studentId]) {
+                    attendanceMap[data.studentId][dateKey] = !!data.attended;
+                }
+            });
+
+            setStudents(studentsList);
+            setAttendanceByDay(attendanceMap);
+            setAttendanceByDay(attendanceMap);
+        } catch (error) {
+            setErrorMessage("Error cargando asistencias previas.");
+            console.error("Error cargando asistencias previas: ", error);
+        } finally {
+            setLoadingAttendance(false);
+        }
+    };
+
+    // Utilidad para obtener solo martes y miércoles de una semana
+    function getClassDaysOfWeek(week) {
+        const days = [];
+        // Martes
+        const tuesday = new Date(week.start);
+        tuesday.setDate(week.start.getDate() + 1);
+        // Miércoles
+        const wednesday = new Date(week.start);
+        wednesday.setDate(week.start.getDate() + 2);
+        days.push({ label: tuesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: tuesday });
+        days.push({ label: wednesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: wednesday });
+        return days;
+    }
+
+    // Utilidad para obtener las últimas 4 semanas (lunes a domingo)
+    function getLastFourWeeks() {
+        const weeks = [];
+        const today = new Date();
+        // Empezar desde el lunes de la semana actual
+        const currentMonday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+        for (let i = 0; i < 6; i++) {
+            const start = new Date(currentMonday);
+            start.setDate(currentMonday.getDate() - i * 7);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            weeks.push({
+                label: `${start.toLocaleDateString('es-ES')} - ${end.toLocaleDateString('es-ES')}`,
+                start: new Date(start),
+                end: new Date(end),
+            });
+        }
+        return weeks;
+    }
+
+    // Cambiar asistencia por alumno y día
+    const handleAttendanceChangeByDay = (studentId, dateKey) => {
+        setAttendanceByDay(prev => ({
+            ...prev,
+            [studentId]: {
+                ...prev[studentId],
+                [dateKey]: !prev[studentId]?.[dateKey]
+            }
+        }));
     };
 
     // Función para actualizar datos
@@ -493,53 +663,7 @@ const HorariosComponent = () => {
         }
     }
 
-    const handleModalClose2 = () => {
-        resetForm();
-        setErrorMessage("");
-        // Cerrar el modal
 
-        onModClose();
-    };
-
-    const handleModalClose = () => {
-        setSelectedalumnoRep(null);
-        setSelectKey(prevKey => prevKey + 1);
-        setErrorMessage("");
-        // Opción: limpiar la lista y el nivel seleccionado después de guardar
-        setStudents([]);
-        setSelectedLevel(null);
-        // Cerrar el modal
-        onAddClose();
-    };
-    const resetForm = () => {
-        setFormData({
-            firstname: "",
-            lastname: "",
-            age: "",
-            grade: "",
-            date: null,
-            indate: "",
-            father: "",
-            mother: "",
-            household: "",
-            siblings: "",
-            co_siblings: "",
-            sponsor_code: "",
-            status: ""
-        });
-        setSelectKey(prevKey => prevKey + 1);
-        setTitle("");
-        setDescription("");
-        setBehdescription("");
-        setSelectedalumnoRep(null);
-        setArchivo1(null);
-        setArchivo2(null);
-        document.getElementById("url1").value = "";
-        document.getElementById("url2").value = "";
-        setPreview1(null);
-        setPreview2(null);
-        setProgressTotal(0);
-    };
 
     const handleSearchChange = (e) => {
         const value = e.target.value.toLowerCase();
@@ -749,20 +873,50 @@ const HorariosComponent = () => {
                                                 </div>
                                             )}
                                             <label className="block text-sm font-medium leading-6 text-gray-900">
-                                                <Chip size="lg" color="primary" radius="sm" variant="flat">Jornada de Clases: {Date("December 17, 1995 03:24:00")}</Chip>
+                                                <Chip size="lg" color="primary" radius="sm" variant="flat">
+                                                    Semana de: {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </Chip>
                                             </label>
                                             <Select
-                                                key={selectKey} // Clave para forzar re-renderizado
+                                                isRequired
+                                                label="Selecciona la Semana"
+                                                placeholder="Selecciona una semana"
+                                                selectedKeys={selectedWeek ? [selectedWeek.label] : []}
+                                                onSelectionChange={async keys => {
+                                                    const arrKeys = Array.from(keys);
+                                                    if (arrKeys.length === 0) return;
+                                                    const week = getLastFourWeeks().find(w => w.label === arrKeys[0]);
+                                                    setSelectedWeek(week);
+                                                    // Cargar asistencias previas si hay nivel seleccionado
+                                                    if (selectedLevel) {
+                                                        await fetchAttendanceForWeek(selectedLevel, week);
+                                                    } else {
+                                                        setAttendanceByDay({});
+                                                    }
+                                                }}
+                                            >
+                                                {getLastFourWeeks().map((week) => (
+                                                    <SelectItem key={week.label} value={week.label}>
+                                                        {week.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </Select>
+
+                                            <Select
+                                                isRequired
+                                                key={selectKey}
                                                 label="Selecciona el Nivel"
                                                 placeholder="Selecciona un Nivel"
-                                                onSelectionChange={(nivel) => {
-                                                    if (!nivel.currentKey) {
-                                                        // Si no hay nivel seleccionado, limpiar la lista de estudiantes y el nivel
+                                                selectedKeys={selectedLevel ? [selectedLevel] : []}
+                                                onSelectionChange={async (nivel) => {
+                                                    const arrKeys = Array.from(nivel);
+                                                    if (arrKeys.length === 0) {
                                                         setStudents([]);
                                                         setSelectedLevel(null);
+                                                        setAttendanceByDay({});
                                                     } else {
-                                                        // Si hay nivel seleccionado, actualizar el estado
-                                                        setSelectedLevel(nivel.currentKey);
+                                                        setSelectedLevel(arrKeys[0]);
+                                                        await fetchAttendanceForWeek(arrKeys[0], selectedWeek);
                                                     }
                                                 }}
                                             >
@@ -775,13 +929,25 @@ const HorariosComponent = () => {
 
                                             {students.length > 0 && (
                                                 <div className="mt-4">
+                                                    <div className="font-bold mb-2">Asistencia por día:</div>
                                                     {students.map((student) => (
-                                                        <div key={student.id} className="flex items-center mb-2">
-                                                            <Checkbox
-                                                                checked={attendance[student.id] || false}
-                                                                onChange={() => handleAttendanceChange(student.id)}
-                                                            />
-                                                            <span className="ml-2">{`${student.firstname} ${student.lastname}`}</span>
+                                                        <div key={student.id} className="mb-2">
+                                                            <span className="font-semibold">{`${student.firstname} ${student.lastname}`}</span>
+                                                            <div className="flex gap-4 ml-4">
+                                                                {getClassDaysOfWeek(selectedWeek).map(day => {
+                                                                    const checked = attendanceByDay[student.id]?.[getDateKey(day.date)] === true;
+                                                                    console.log(student.id, getDateKey(day.date), checked);
+                                                                    return (
+                                                                        <Checkbox
+                                                                            key={day.date.toISOString()}
+                                                                            isSelected={attendanceByDay[student.id]?.[getDateKey(day.date)] === true}
+                                                                            onValueChange={() => handleAttendanceChangeByDay(student.id, getDateKey(day.date))}
+                                                                        >
+                                                                            {day.label}
+                                                                        </Checkbox>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -823,6 +989,14 @@ const HorariosComponent = () => {
                                             {errorMessage && (
                                                 <div className="text-red-500 text-center mb-4">
                                                     {errorMessage}
+                                                </div>
+                                            )}
+
+                                            {loadingAttendance ? (
+                                                <div>Cargando asistencias...</div>
+                                            ) : students.length > 0 && (
+                                                <div className="mt-4">
+                                                    {/* ...tu render de checkboxes... */}
                                                 </div>
                                             )}
                                             <div className="flex flex-col mb-4">
