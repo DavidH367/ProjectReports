@@ -22,7 +22,6 @@ import { Input, Select, SelectItem, Textarea, DatePicker, Divider } from "@nextu
 import { Timestamp } from "firebase/firestore";
 import imageCompression from 'browser-image-compression';
 
-
 const upReference = collection(db, "updates");
 const alumnosReference = collection(db, "nlp");
 const reportsReference = collection(db, "reportsnlp");
@@ -63,6 +62,7 @@ const HorariosComponent = () => {
     const [selectedLevel, setSelectedLevel] = useState("");
     const [students, setStudents] = useState([]);
     const [attendance, setAttendance] = useState({});
+    const [selectedHistoryLevel, setSelectedHistoryLevel] = useState("");
 
     const [progressTotal, setProgressTotal] = useState(0); // Progreso total
     const [archivo1, setArchivo1] = useState(null);
@@ -126,40 +126,44 @@ const HorariosComponent = () => {
 
     const fetchAttendanceHistory = async () => {
         try {
-            let attendanceQuery;
+            let studentIds = [];
+            // Si hay nivel seleccionado, busca los IDs de los alumnos de ese nivel
+            if (selectedHistoryLevel) {
+                const studentQuery = query(
+                    collection(db, "nlp"),
+                    where("grade", "in", levels[selectedHistoryLevel]),
+                    where("status", "==", "Activo")
+                );
+                const studentSnapshot = await getDocs(studentQuery);
+                studentIds = studentSnapshot.docs.map(doc => doc.id);
+                if (studentIds.length === 0) {
+                    setFilteredAttendance([]);
+                    return;
+                }
+            }
 
-            if (selectedStudent && selectedDateRange.start && selectedDateRange.end) {
-                // Filtrar por alumno y rango de fechas
+            // Construye los filtros para la consulta de attendance
+            const filters = [];
+            if (selectedHistoryLevel && studentIds.length > 0) {
+                // Solo filtra si hay IDs
+                filters.push(where("studentId", "in", studentIds));
+            }
+            if (selectedStudent) {
+                filters.push(where("studentId", "==", selectedStudent));
+            }
+            if (selectedDateRange.start && selectedDateRange.end) {
                 const startDate = new Date(selectedDateRange.start);
                 const endDate = new Date(selectedDateRange.end);
-                attendanceQuery = query(
-                    collection(db, "attendance"),
-                    where("studentId", "==", selectedStudent),
-                    where("date", ">=", startDate),
-                    where("date", "<=", endDate)
-                );
-            } else if (selectedStudent) {
-                // Filtrar solo por alumno
-                attendanceQuery = query(
-                    collection(db, "attendance"),
-                    where("studentId", "==", selectedStudent)
-                );
-            } else if (selectedDateRange.start && selectedDateRange.end) {
+                filters.push(where("date", ">=", startDate));
+                filters.push(where("date", "<=", endDate));
+            }
 
-                // Filtrar solo por rango de fechas
-                const startDate = new Date(selectedDateRange.start);
-                const endDate = new Date(selectedDateRange.end);
-                attendanceQuery = query(
-                    collection(db, "attendance"),
-                    where("date", ">=", startDate),
-                    where("date", "<=", endDate)
-                );
-            } else {
-                // Si no hay selección, no hacer nada
+            if (filters.length === 0) {
                 setFilteredAttendance([]);
                 return;
             }
 
+            const attendanceQuery = query(collection(db, "attendance"), ...filters);
             const snapshot = await getDocs(attendanceQuery);
             const historyList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setFilteredAttendance(historyList);
@@ -170,10 +174,10 @@ const HorariosComponent = () => {
     };
 
     useEffect(() => {
-        if (selectedStudent || selectedDateRange.start || selectedDateRange.end) {
+        if (selectedStudent || selectedDateRange.start || selectedDateRange.end || selectedHistoryLevel) {
             fetchAttendanceHistory();
         }
-    }, [selectedStudent, selectedDateRange]);
+    }, [selectedStudent, selectedDateRange, selectedHistoryLevel]);
 
     useEffect(() => {
         if (selectedLevel) {
@@ -292,6 +296,10 @@ const HorariosComponent = () => {
         onModClose();
     };
 
+    function toUTCDateOnly(date) {
+        return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    }
+
     // Limpiar alumnos y asistencias al cerrar modal
     const handleModalClose = () => {
         setSelectedalumnoRep(null);
@@ -360,7 +368,6 @@ const HorariosComponent = () => {
         });
     };
 
-
     const resetForm = () => {
         setFormData({
             firstname: "",
@@ -424,7 +431,7 @@ const HorariosComponent = () => {
                         studentId: student.id,
                         studentName: `${student.firstname} ${student.lastname}`,
                         attended,
-                        date: day.date,
+                        date: Timestamp.fromDate(day.date), // day.date ya es local
                     });
                 }
             }
@@ -502,24 +509,37 @@ const HorariosComponent = () => {
 
     // Utilidad para obtener solo martes y miércoles de una semana
     function getClassDaysOfWeek(week) {
-        const days = [];
-        // Martes
-        const tuesday = new Date(week.start);
-        tuesday.setDate(week.start.getDate() + 1);
-        // Miércoles
-        const wednesday = new Date(week.start);
-        wednesday.setDate(week.start.getDate() + 2);
-        days.push({ label: tuesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: tuesday });
-        days.push({ label: wednesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: wednesday });
-        return days;
-    }
+    const days = [];
+    // Martes (día 2 de la semana)
+    const tuesday = new Date(
+        week.start.getFullYear(),
+        week.start.getMonth(),
+        week.start.getDate() + 1
+    );
+    // Miércoles (día 3 de la semana)
+    const wednesday = new Date(
+        week.start.getFullYear(),
+        week.start.getMonth(),
+        week.start.getDate() + 2
+    );
+    days.push({ label: tuesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: tuesday });
+    days.push({ label: wednesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: wednesday });
+    return days;
+}
 
     // Utilidad para obtener las últimas 4 semanas (lunes a domingo)
     function getLastFourWeeks() {
         const weeks = [];
         const today = new Date();
-        // Empezar desde el lunes de la semana actual
-        const currentMonday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+        // Obtener el día de la semana local (0=domingo, 1=lunes, ..., 6=sábado)
+        const localDay = today.getDay();
+        // Calcular el lunes de la semana actual en hora local
+        const diffToMonday = (localDay + 6) % 7;
+        const currentMonday = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate() - diffToMonday
+        );
         for (let i = 0; i < 6; i++) {
             const start = new Date(currentMonday);
             start.setDate(currentMonday.getDate() - i * 7);
@@ -1015,6 +1035,23 @@ const HorariosComponent = () => {
                                                     {alumnosReports.map((student) => (
                                                         <SelectItem key={student.id} value={student.id}>
                                                             {`${student.firstname} ${student.lastname}`}
+                                                        </SelectItem>
+                                                    ))}
+                                                </Select>
+
+                                                <label className="block text-sm font-medium leading-6 text-gray-900">
+                                                    Selecciona un Nivel:
+                                                </label>
+                                                <Select
+                                                    label="Nivel"
+                                                    placeholder="Selecciona un Nivel"
+                                                    value={selectedHistoryLevel}
+                                                    onChange={e => setSelectedHistoryLevel(e.target.value)}
+                                                    className="mb-4"
+                                                >
+                                                    {Object.keys(levels).map(key => (
+                                                        <SelectItem key={key} value={key}>
+                                                            {`Nivel ${key}: ${levels[key].join(', ')}`}
                                                         </SelectItem>
                                                     ))}
                                                 </Select>
