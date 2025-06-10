@@ -253,6 +253,13 @@ const HorariosComponent = () => {
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        // Limpiar historial si se deselecciona alumno o nivel
+        if (!selectedStudent && !selectedHistoryLevel) {
+            setFilteredAttendance([]);
+        }
+    }, [selectedStudent, selectedHistoryLevel]);
+
     const getFullName = async () => {
         try {
             let idTeacher = user.uid;
@@ -486,11 +493,9 @@ const HorariosComponent = () => {
                 });
             });
 
-            console.log('Claves de días:', classDays.map(day => getDateKey(day.date)));
             attendanceSnapshot.forEach(doc => {
                 const data = doc.data();
                 const dateKey = getDateKey(data.date.seconds ? data.date.seconds * 1000 : data.date);
-                console.log('Firestore:', data.studentId, dateKey, data.attended);
                 if (attendanceMap[data.studentId]) {
                     attendanceMap[data.studentId][dateKey] = !!data.attended;
                 }
@@ -509,23 +514,23 @@ const HorariosComponent = () => {
 
     // Utilidad para obtener solo martes y miércoles de una semana
     function getClassDaysOfWeek(week) {
-    const days = [];
-    // Martes (día 2 de la semana)
-    const tuesday = new Date(
-        week.start.getFullYear(),
-        week.start.getMonth(),
-        week.start.getDate() + 1
-    );
-    // Miércoles (día 3 de la semana)
-    const wednesday = new Date(
-        week.start.getFullYear(),
-        week.start.getMonth(),
-        week.start.getDate() + 2
-    );
-    days.push({ label: tuesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: tuesday });
-    days.push({ label: wednesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: wednesday });
-    return days;
-}
+        const days = [];
+        // Martes (día 2 de la semana)
+        const tuesday = new Date(
+            week.start.getFullYear(),
+            week.start.getMonth(),
+            week.start.getDate() + 1
+        );
+        // Miércoles (día 3 de la semana)
+        const wednesday = new Date(
+            week.start.getFullYear(),
+            week.start.getMonth(),
+            week.start.getDate() + 2
+        );
+        days.push({ label: tuesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: tuesday });
+        days.push({ label: wednesday.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit' }), date: wednesday });
+        return days;
+    }
 
     // Utilidad para obtener las últimas 4 semanas (lunes a domingo)
     function getLastFourWeeks() {
@@ -956,7 +961,6 @@ const HorariosComponent = () => {
                                                             <div className="flex gap-4 ml-4">
                                                                 {getClassDaysOfWeek(selectedWeek).map(day => {
                                                                     const checked = attendanceByDay[student.id]?.[getDateKey(day.date)] === true;
-                                                                    console.log(student.id, getDateKey(day.date), checked);
                                                                     return (
                                                                         <Checkbox
                                                                             key={day.date.toISOString()}
