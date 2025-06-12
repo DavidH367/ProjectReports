@@ -783,7 +783,9 @@ const HorariosComponent = () => {
                                                         className="max-w-xs"
                                                         value={selectedAlumnoRep}
                                                         isRequired
-
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                         onChange={handleAlumnoRepChange}
                                                     >
                                                         {alumnosReports.map((supplier) => (
@@ -1035,6 +1037,9 @@ const HorariosComponent = () => {
                                                     id="selectStudent"
                                                     value={selectedStudent}
                                                     onChange={(student) => setSelectedStudent(student.target.value)}
+                                                    classNames={{
+                                                        listbox: "max-h-64 overflow-y-auto",
+                                                    }}
                                                 >
                                                     {alumnosReports.map((student) => (
                                                         <SelectItem key={student.id} value={student.id}>
@@ -1052,6 +1057,9 @@ const HorariosComponent = () => {
                                                     value={selectedHistoryLevel}
                                                     onChange={e => setSelectedHistoryLevel(e.target.value)}
                                                     className="mb-4"
+                                                    classNames={{
+                                                        listbox: "max-h-64 overflow-y-auto",
+                                                    }}
                                                 >
                                                     {Object.keys(levels).map(key => (
                                                         <SelectItem key={key} value={key}>

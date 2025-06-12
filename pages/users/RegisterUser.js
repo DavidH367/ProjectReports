@@ -42,7 +42,7 @@ const UserRegister = () => {
     firstName: "",
     lastName: "",
     role: "",
-    state:""
+    state: ""
   });
 
   const roles = [
@@ -66,7 +66,7 @@ const UserRegister = () => {
         firstName: "",
         lastName: "",
         role: "",
-        state:""
+        state: ""
       });
     } else {
       const selectedUserssData = Usuarios.find(usuario => usuario.id === selectedUserssValue);
@@ -111,7 +111,7 @@ const UserRegister = () => {
             firstName: data.firstName,
             lastName: data.lastName,
             role: data.role,
-            state:data.state
+            state: data.state
           });
         });
 
@@ -145,21 +145,21 @@ const UserRegister = () => {
       firstName: "",
       lastName: "",
       role: "",
-      state:""
+      state: ""
     });
     setselectedUserss(null);
     setSelectKey(prevKey => prevKey + 1);
     // Cerrar el modal
     onClose();
-};
+  };
 
   // Función para guardar datos
   const handleSubmit2 = async () => {
     if (!guardando) {
       setGuardando(true);
-  
+
       const idDocumentos = selectedUserss;
-  
+
       // Verificar si los campos obligatorios están llenos
       if (!formData.firstName || !formData.lastName) {
         setFormValid(false);
@@ -167,65 +167,65 @@ const UserRegister = () => {
         setGuardando(false); // Asegúrate de habilitar el botón de nuevo
         return; // No enviar el formulario si falta algún campo obligatorio
       }
-  
+
       try {
         // id del usuario
         const docRef = doc(UsuariosInfoRef, idDocumentos);
         const docSnap = await getDoc(docRef); // Cambiado de getDocs a getDoc
-    
+
         if (docSnap.exists()) {
-            const existingData = docSnap.data();
-    
-            // Si state o role están vacíos, usa los valores actuales de Firestore
-            const newData = {
-                firstName: formData.firstName.toUpperCase(),
-                lastName: formData.lastName.toUpperCase(),
-                role: formData.role || existingData.role, // Usar el valor existente si el campo está vacío
-                state: formData.state || existingData.state, // Usar el valor existente si el campo está vacío
-                displayName: `${formData.firstName.toUpperCase()} ${formData.lastName.toUpperCase()}`,
-            };
-    
-            const newUpData = {
-                action: "Se Modificó Rol de Usuario",
-                date: new Date(),
-                uid: user.uid,
-            };
-    
-            // Validar el rol del usuario antes de guardar los cambios
-            if (!user || user.role === 'MAESTRO') {
-                setErrorMessage("No tienes permisos para realizar esta acción.");
-                setGuardando(false);
-                return;
-            }
-    
-            await updateDoc(docRef, newData);
-            await addDoc(upReference, newUpData);
-    
-            setselectedUserss(null);
-            setSelectKey(prevKey => prevKey + 1);
-            setFormData({
-                firstName: "",
-                lastName: "",
-                role: "",
-                state: "", // Restablecer el campo state
-            });
-    
-            setFormValid(true);
-            setErrorMessage("");
+          const existingData = docSnap.data();
+
+          // Si state o role están vacíos, usa los valores actuales de Firestore
+          const newData = {
+            firstName: formData.firstName.toUpperCase(),
+            lastName: formData.lastName.toUpperCase(),
+            role: formData.role || existingData.role, // Usar el valor existente si el campo está vacío
+            state: formData.state || existingData.state, // Usar el valor existente si el campo está vacío
+            displayName: `${formData.firstName.toUpperCase()} ${formData.lastName.toUpperCase()}`,
+          };
+
+          const newUpData = {
+            action: "Se Modificó Rol de Usuario",
+            date: new Date(),
+            uid: user.uid,
+          };
+
+          // Validar el rol del usuario antes de guardar los cambios
+          if (!user || user.role === 'MAESTRO') {
+            setErrorMessage("No tienes permisos para realizar esta acción.");
+            setGuardando(false);
+            return;
+          }
+
+          await updateDoc(docRef, newData);
+          await addDoc(upReference, newUpData);
+
+          setselectedUserss(null);
+          setSelectKey(prevKey => prevKey + 1);
+          setFormData({
+            firstName: "",
+            lastName: "",
+            role: "",
+            state: "", // Restablecer el campo state
+          });
+
+          setFormValid(true);
+          setErrorMessage("");
 
         } else {
-            console.error("El documento no existe.");
+          console.error("El documento no existe.");
         }
-    } catch (error) {
+      } catch (error) {
         console.error("Error al guardar los datos:", error);
         setErrorMessage("Error al guardar los datos.");
-    } finally {
+      } finally {
         setGuardando(false); // Asegúrate de habilitar el botón de nuevo
-    }
-    
+      }
+
     }
   };
-  
+
   const handleSubmit = async () => {
     if (firstName === "") {
       setErrors("El nombre no puede estar vacío");
@@ -335,7 +335,9 @@ const UserRegister = () => {
                               placeholder="Selecciona un Usuario"
                               className="max-w-xs"
                               value={selectedUserss}
-
+                              classNames={{
+                                listbox: "max-h-64 overflow-y-auto",
+                              }}
                               onChange={handleSupplierChange}
                             >
                               {Usuarios.map((supplier) => (

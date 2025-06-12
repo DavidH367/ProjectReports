@@ -682,6 +682,9 @@ const TeachersNLPComponent = () => {
                                                         label="Select an Area"
                                                         value={area}
                                                         onChange={(e) => setArea(e.target.value)}
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         {areas.map((area) => (
                                                             <SelectItem key={area.key} value={area.label}>
@@ -718,7 +721,7 @@ const TeachersNLPComponent = () => {
                                                     <label
                                                         className=" block text-sm font-medium leading-6 text-gray-900"
                                                     >
-                                                        <p className="font text-md p-4">Informacion  de Estados </p>
+                                                        <p className="font text-md p-4">Informacion  de Estatus </p>
                                                     </label>
                                                     <Select
                                                         key={selectKey2} // Clave para forzar re-renderizado
@@ -729,6 +732,9 @@ const TeachersNLPComponent = () => {
                                                         className="max-w-xs"
                                                         value={sponsor_code}
                                                         onChange={(e) => setSponsor_code(e.target.value)}
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         {sponsors.map((supplier) => (
                                                             <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >
@@ -811,7 +817,9 @@ const TeachersNLPComponent = () => {
                                                                 placeholder="Selecciona un Maestro"
                                                                 className="max-w-xs"
                                                                 value={selectedTeachers}
-
+                                                                classNames={{
+                                                                    listbox: "max-h-64 overflow-y-auto",
+                                                                }}
                                                                 onChange={handleTeacherChange}
                                                             >
                                                                 {teacherss.map((supplier) => (
@@ -891,6 +899,9 @@ const TeachersNLPComponent = () => {
                                                         label="Select an Area"
                                                         value={area}
                                                         onChange={(e) => setArea(e.target.value)}
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         {areas.map((area) => (
                                                             <SelectItem key={area.key} value={area.label}>
@@ -933,6 +944,9 @@ const TeachersNLPComponent = () => {
                                                         className="max-w-xs"
                                                         value={sponsor_code}
                                                         onChange={(e) => setSponsor_code(e.target.value)}
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         {sponsors.map((supplier) => (
                                                             <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >

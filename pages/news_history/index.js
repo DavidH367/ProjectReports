@@ -285,7 +285,7 @@ const MinistriesComponent = () => {
         setArchivo1(null);
         setArchivo2(null);
         setArchivo3(null);
-        setSelectedType("Noticia"); 
+        setSelectedType("Noticia");
 
         // Resetear el input de archivo
         document.getElementById("url1").value = "";
@@ -331,7 +331,7 @@ const MinistriesComponent = () => {
           <form onSubmit={handleSubmit} >
             <Divider className="my-4" />
             <div className="flex flex-col gap-3">
-              <RadioGroup label="Seleccione el tipo de Actualización" orientation="horizontal" value={selectedType} onValueChange={setSelectedType} isRequired> 
+              <RadioGroup label="Seleccione el tipo de Actualización" orientation="horizontal" value={selectedType} onValueChange={setSelectedType} isRequired>
                 <Radio value="Noticia">Noticia de Ministerio</Radio>
                 <Radio value="Necesidad">Nueva Necesidad de Ministerio</Radio>
               </RadioGroup>
@@ -352,6 +352,9 @@ const MinistriesComponent = () => {
                     className="max-w-xs"
                     value={selectedMinistry}
                     onChange={handleMinistryChange}
+                    classNames={{
+                      listbox: "max-h-64 overflow-y-auto",
+                    }}
                   >
                     {(ministr) => (
                       <SelectItem key={ministr.id} textValue={ministr.name}>

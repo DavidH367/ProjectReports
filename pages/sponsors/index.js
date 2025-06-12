@@ -506,7 +506,9 @@ const SponsorsNLPComponent = () => {
                                                                 placeholder="Selecciona un Sponsor"
                                                                 className="max-w-xs"
                                                                 value={selectedSponsor}
-
+                                                                classNames={{
+                                                                    listbox: "max-h-64 overflow-y-auto",
+                                                                }}
                                                                 onChange={handleSponsorChange}
                                                             >
                                                                 {sponsors.map((sponsor) => (

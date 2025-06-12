@@ -874,6 +874,9 @@ const Alumnosnlp = () => {
                                                         className="max-w-xs"
                                                         value={sponsor_code}
                                                         onChange={(e) => setSponsor_code(e.target.value)}
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         {sponsors.map((supplier) => (
                                                             <SelectItem key={supplier.code} textValue={`${supplier.code} ${supplier.fullname}`} >
@@ -987,8 +990,10 @@ const Alumnosnlp = () => {
                                                                 placeholder="Selecciona un Alumno"
                                                                 className="max-w-xs"
                                                                 value={selectedAlumnoNLP}
-
                                                                 onChange={handleAlumnoChange}
+                                                                classNames={{
+                                                                    listbox: "max-h-64 overflow-y-auto",
+                                                                }}
                                                             >
                                                                 {alumnosnlp.map((supplier) => (
                                                                     <SelectItem key={supplier.id} textValue={`${supplier.firstname} ${supplier.lastname}`} >
@@ -1168,7 +1173,10 @@ const Alumnosnlp = () => {
                                                         placeholder="Selecciona un Patrocinador"
                                                         className="max-w-xs"
                                                         value={sponsor_code}
-                                                        onChange={(e) => setSponsor_code(e.target.value)}
+                                                        onChange={(e) => setSponsor_code(e.target.value)} v
+                                                        classNames={{
+                                                            listbox: "max-h-64 overflow-y-auto",
+                                                        }}
                                                     >
                                                         <SelectItem key="N/A" textValue="N/A">
                                                             <div className="flex gap-2 items-center">

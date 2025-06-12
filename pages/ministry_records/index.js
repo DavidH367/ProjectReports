@@ -87,7 +87,7 @@ const MinistryRecordsComponent = () => {
   const uploadLogo = async (file) => {
     const storageRef = ref(storage, `imagenes/imagenes/logos/${file.name}`); // Crea una referencia al archivo
     const uploadTask = uploadBytesResumable(storageRef, file); // Sube el archivo
-  
+
     return new Promise((resolve, reject) => {
       uploadTask.on(
         "state_changed",
@@ -187,7 +187,7 @@ const MinistryRecordsComponent = () => {
     onClose();
   };
 
-  
+
 
   // Función para guardar datos
   const handleSubmit = async () => {
@@ -359,7 +359,9 @@ const MinistryRecordsComponent = () => {
                             placeholder="Selecciona un Proyecto"
                             className="max-w-xs"
                             value={selectedMinistry}
-
+                            classNames={{
+                              listbox: "max-h-64 overflow-y-auto",
+                            }}
                             onChange={handleSupplierChange}
                           >
                             {ministry.map((supplier) => (
